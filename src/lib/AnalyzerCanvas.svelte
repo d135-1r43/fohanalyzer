@@ -137,8 +137,11 @@
         const sv = solo[i] + svc.g + svc.tilt * lf;
         st.avgMic[i] = ca > 0 ? st.avgMic[i] * ca + mt * (1 - ca) : mt;
         st.avgSolo[i] = ca > 0 ? st.avgSolo[i] * ca + sv * (1 - ca) : sv;
-        st.dispMic[i] = st.dispMic[i] * cs + st.avgMic[i] * (1 - cs);
-        st.dispSolo[i] = st.dispSolo[i] * cs + st.avgSolo[i] * (1 - cs);
+        // fast attack, slow release: rise instantly, fall at the smoothing rate
+        const csm = st.avgMic[i]  > st.dispMic[i]  ? 0 : cs;
+        const css = st.avgSolo[i] > st.dispSolo[i] ? 0 : cs;
+        st.dispMic[i]  = st.dispMic[i]  * csm + st.avgMic[i]  * (1 - csm);
+        st.dispSolo[i] = st.dispSolo[i] * css + st.avgSolo[i] * (1 - css);
         st.holdMic[i] = Math.max(st.holdMic[i] - 0.42, st.dispMic[i]);
         st.holdSolo[i] = Math.max(st.holdSolo[i] - 0.42, st.dispSolo[i]);
       }

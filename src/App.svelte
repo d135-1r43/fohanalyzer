@@ -28,7 +28,7 @@
 
   let micOn       = $state(true);
   let soloOn      = $state(true);
-  let frac        = $state(3);
+  let frac        = $state(12);
   let smoothing   = $state(0.62);
   let avgN        = $state(4);
   let peakHold    = $state(false);

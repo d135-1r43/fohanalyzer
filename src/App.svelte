@@ -8,6 +8,9 @@
   import { bandCenters, noteName, fmtFreq, fmtShort } from './lib/engine.js';
   import { AudioSource, enumerateAudioInputs } from './lib/audioInput.js';
 
+  /* global __APP_VERSION__ */
+  const appVersion = __APP_VERSION__;
+
   const MIC_INPUTS = [
     { id: 'ch32', label: 'Ch 32 · Meas Mic', g: 0, tilt: 0 },
     { id: 'ch31', label: 'Ch 31 · Meas Mic', g: -1.5, tilt: 0.3 },
@@ -139,7 +142,7 @@
         <div class="wm-top"><b>FOH</b>analyzer</div>
         <div class="wm-sub">DUAL SPECTRUM · RTA</div>
       </div>
-      <span class="ver-chip">2.0</span>
+      <span class="ver-chip">{appVersion}</span>
     </div>
 
     <div class="hdr-readouts">

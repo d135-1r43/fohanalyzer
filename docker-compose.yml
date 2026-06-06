@@ -1,0 +1,10 @@
+services:
+  fohanalizer:
+    image: ghcr.io/d135-1r43/fohanalizer:latest
+    restart: unless-stopped
+    networks:
+      - nginx-proxy-manager
+
+networks:
+  nginx-proxy-manager:
+    external: true

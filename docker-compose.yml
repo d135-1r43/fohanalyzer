@@ -1,6 +1,6 @@
 services:
-  fohanalizer:
-    image: ghcr.io/d135-1r43/fohanalizer:latest
+  fohanalyzer:
+    image: ghcr.io/d135-1r43/fohanalyzer:latest
     restart: unless-stopped
     networks:
       - nginx-proxy-manager

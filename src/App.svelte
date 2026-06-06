@@ -6,6 +6,7 @@
   import SourceCard from './lib/SourceCard.svelte';
   import AnalyzerCanvas from './lib/AnalyzerCanvas.svelte';
   import { bandCenters, noteName, fmtFreq, fmtShort } from './lib/engine.js';
+  import { AudioSource, enumerateAudioInputs } from './lib/audioInput.js';
 
   const MIC_INPUTS = [
     { id: 'ch32', label: 'Ch 32 · Meas Mic', g: 0, tilt: 0 },
@@ -42,16 +43,55 @@
   let locateFreq      = $state(null);
   let stats = $state({ peakFreq: 0, micPeak: -90, micAvg: -90, soloAvg: -90, soloPeak: -90 });
   let clock = $state('');
+  let audioDevices = $state([]);
 
   const micVoice  = $derived(MIC_INPUTS.find((o) => o.id === micChan));
   const soloVoice = $derived(SOLO_INPUTS.find((o) => o.id === soloChan));
 
-  onMount(() => {
+  // Live AudioSource instances — plain (non-reactive) objects
+  let micSource = null;
+  let soloSource = null;
+
+  $effect(() => {
+    if (micChan.startsWith('live:')) {
+      const deviceId = micChan.slice(5);
+      if (!micSource) micSource = new AudioSource();
+      micSource.connect(deviceId);
+    } else {
+      micSource?.disconnect();
+      micSource = null;
+    }
+  });
+
+  $effect(() => {
+    if (soloChan.startsWith('live:')) {
+      const deviceId = soloChan.slice(5);
+      if (!soloSource) soloSource = new AudioSource();
+      soloSource.connect(deviceId);
+    } else {
+      soloSource?.disconnect();
+      soloSource = null;
+    }
+  });
+
+  onMount(async () => {
     const id = setInterval(() => {
       const d = new Date();
       clock = d.toLocaleTimeString('en-GB');
     }, 1000);
-    return () => clearInterval(id);
+
+    audioDevices = await enumerateAudioInputs();
+
+    // Re-enumerate after permission is granted (labels fill in)
+    navigator.mediaDevices.addEventListener('devicechange', async () => {
+      audioDevices = await enumerateAudioInputs();
+    });
+
+    return () => {
+      clearInterval(id);
+      micSource?.disconnect();
+      soloSource?.disconnect();
+    };
   });
 
   function onStats(s) { stats = s; }
@@ -133,7 +173,7 @@
       <AnalyzerCanvas
         {micOn} {soloOn} {frac} {smoothing} {avgN} {peakHold}
         {holdReset} {markers} {markerSource} {ring} {onStats}
-        {micVoice} {soloVoice}
+        {micVoice} {soloVoice} {micSource} {soloSource}
         {showTransfer} {captureNonce} {onCapture} {reference} {showReference} {locateFreq}
       />
     </div>
@@ -148,12 +188,14 @@
           on={micOn} setOn={(v) => (micOn = v)} level={stats.micAvg}
           isMarker={markerSource === 'mic'} setMarker={() => (markerSource = 'mic')}
           options={MIC_INPUTS} chan={micChan} setChan={(v) => (micChan = v)}
+          {audioDevices}
         />
         <SourceCard
           name="Solo Bus" sub="Console · PFL/AFL" color="#f5a524"
           on={soloOn} setOn={(v) => (soloOn = v)} level={stats.soloAvg}
           isMarker={markerSource === 'solo'} setMarker={() => (markerSource = 'solo')}
           options={SOLO_INPUTS} chan={soloChan} setChan={(v) => (soloChan = v)}
+          {audioDevices}
         />
       </section>
 

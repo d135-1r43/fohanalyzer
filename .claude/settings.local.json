@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gunzip -c /Users/markus/.claude/projects/-Users-markus-git-fohanalizer/14490ed3-e8c8-4a0b-899d-39fa9e93e6ec/tool-results/webfetch-1780764556925-3jp713.bin)"
+    ]
+  }
+}

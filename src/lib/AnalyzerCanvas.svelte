@@ -15,6 +15,8 @@
     ring = { active: false, fc: 2500, t0: 0 },
     micVoice = { g: 0, tilt: 0 },
     soloVoice = { g: 0, tilt: 0 },
+    micSource = null,
+    soloSource = null,
     showTransfer = false,
     captureNonce = 0,
     onCapture,
@@ -119,9 +121,14 @@
         st.holdMic.fill(-95); st.holdSolo.fill(-95);
       }
 
-      const { mic, solo } = sample(centers, t, ring);
-      const mvc = micVoice || { g: 0, tilt: 0 };
-      const svc = soloVoice || { g: 0, tilt: 0 };
+      const simData = sample(centers, t, ring);
+      const liveMic  = micSource?.readBands(centers, frac);
+      const liveSolo = soloSource?.readBands(centers, frac);
+      const mic  = liveMic  ?? simData.mic;
+      const solo = liveSolo ?? simData.solo;
+      // voicing only applies to simulated sources
+      const mvc = liveMic  ? { g: 0, tilt: 0 } : (micVoice  || { g: 0, tilt: 0 });
+      const svc = liveSolo ? { g: 0, tilt: 0 } : (soloVoice || { g: 0, tilt: 0 });
       const ca = avgN > 1 ? 1 - 1 / avgN : 0;
       const cs = smoothing;
       for (let i = 0; i < n; i++) {

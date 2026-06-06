@@ -3,7 +3,7 @@
   import ChannelSelect from './ChannelSelect.svelte';
   import Meter from './Meter.svelte';
 
-  let { name, sub, color, on, setOn, level, isMarker, setMarker, options, chan, setChan } = $props();
+  let { name, sub, color, on, setOn, level, isMarker, setMarker, options, chan, setChan, audioDevices = [] } = $props();
 </script>
 
 <div class="src-card" class:off={!on}>
@@ -15,7 +15,7 @@
     </div>
     <Toggle {on} onChange={setOn} {color} />
   </div>
-  <ChannelSelect value={chan} {options} onChange={setChan} {color} />
+  <ChannelSelect value={chan} {options} {audioDevices} onChange={setChan} {color} />
   <div class="src-bottom">
     <Meter value={level} {color} />
     <button

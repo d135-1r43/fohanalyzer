@@ -87,7 +87,12 @@
       const svc = liveSolo ? { g: 0, tilt: 0 } : (soloVoice || { g: 0, tilt: 0 });
       sig.update(liveMic ?? simData.mic, liveSolo ?? simData.solo, mvc, svc, centers, smoothing, avgN);
 
-      if (onStats && t - lastReport > 0.12) { lastReport = t; onStats(sig.getStats(centers)); }
+      if (onStats && t - lastReport > 0.12) {
+        lastReport = t;
+        const s = sig.getStats(centers);
+        if (micSource) s.micRmsDbfs = micSource.readRMS();
+        onStats(s);
+      }
       if (captureNonce !== lastCapture) {
         lastCapture = captureNonce;
         if (captureNonce > 0 && onCapture)

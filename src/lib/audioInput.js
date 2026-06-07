@@ -4,6 +4,7 @@ export class AudioSource {
     this.analyser = null;
     this.stream = null;
     this.freqData = null;
+    this.timeData = null;
     this.deviceId = null;
     this.error = null;
   }
@@ -23,6 +24,7 @@ export class AudioSource {
       this.analyser.smoothingTimeConstant = 0;
       source.connect(this.analyser);
       this.freqData = new Float32Array(this.analyser.frequencyBinCount);
+      this.timeData = new Float32Array(this.analyser.fftSize);
       this.deviceId = deviceId;
     } catch (err) {
       this.error = err.message;
@@ -37,6 +39,7 @@ export class AudioSource {
     this.analyser = null;
     this.stream = null;
     this.freqData = null;
+    this.timeData = null;
     this.deviceId = null;
   }
 
@@ -61,6 +64,16 @@ export class AudioSource {
       out[i] = Math.max(-95, Math.min(-2, peak > -200 ? peak : -95));
     }
     return out;
+  }
+
+  // Returns the broadband RMS level in dBFS, or null if not connected.
+  readRMS() {
+    if (!this.analyser || !this.timeData) return null;
+    this.analyser.getFloatTimeDomainData(this.timeData);
+    let sum = 0;
+    for (let i = 0; i < this.timeData.length; i++) sum += this.timeData[i] * this.timeData[i];
+    const rms = Math.sqrt(sum / this.timeData.length);
+    return rms > 1e-9 ? 20 * Math.log10(rms) : -144;
   }
 
   get connected() { return this.analyser !== null; }

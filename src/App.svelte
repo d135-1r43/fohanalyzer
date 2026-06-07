@@ -44,9 +44,14 @@
   let showReference   = $state(true);
   let feedbackLog     = $state([]);
   let locateFreq      = $state(null);
-  let stats = $state({ peakFreq: 0, micPeak: -90, micAvg: -90, soloAvg: -90, soloPeak: -90 });
+  let stats = $state({ peakFreq: 0, micPeak: -90, micAvg: -90, soloAvg: -90, soloPeak: -90, micRmsDbfs: null });
+  let splOffset = $state(0);
+  let calRefSpl = $state(94);
   let clock = $state('');
   let audioDevices = $state([]);
+
+  const isMicLive = $derived(micChan.startsWith('live:'));
+  const micSpl = $derived(stats.micRmsDbfs != null ? stats.micRmsDbfs + splOffset : null);
 
   const micVoice  = $derived(MIC_INPUTS.find((o) => o.id === micChan));
   const soloVoice = $derived(SOLO_INPUTS.find((o) => o.id === soloChan));
@@ -98,6 +103,7 @@
   });
 
   function onStats(s) { stats = s; }
+  function calibrateSpl() { if (stats.micRmsDbfs != null) splOffset = calRefSpl - stats.micRmsDbfs; }
 
   function onCapture(d) {
     reference = { ...d, time: new Date().toLocaleTimeString('en-GB').slice(0, 5) };
@@ -158,6 +164,14 @@
         <span class="ro-lbl">SOLO</span>
         <span class="ro-val" style="color:#f5a524">{stats.soloPeak.toFixed(1)}<i>dB</i></span>
       </div>
+      {#if isMicLive}
+        <div class="ro ro-spl" class:ro-spl-cal={splOffset !== 0}>
+          <span class="ro-lbl">SPL{splOffset === 0 ? ' · UNCAL' : ''}</span>
+          <span class="ro-val" style="color:#a3e635">
+            {micSpl != null ? micSpl.toFixed(1) : '—'}<i>dB</i>
+          </span>
+        </div>
+      {/if}
     </div>
 
     <div class="status">
@@ -201,6 +215,38 @@
           {audioDevices}
         />
       </section>
+
+      <!-- SPL Meter -->
+      {#if isMicLive}
+        <section class="section">
+          <div class="sec-title">SPL Meter</div>
+          <div class="spl-display" class:spl-cal={splOffset !== 0}>
+            <div class="spl-readout">
+              <span class="spl-val">{micSpl != null ? micSpl.toFixed(1) : '—'}</span>
+              <span class="spl-unit">dB SPL</span>
+            </div>
+            <span class="spl-badge" class:spl-badge-cal={splOffset !== 0}>
+              {splOffset !== 0 ? 'CAL' : 'UNCAL'}
+            </span>
+          </div>
+          <div class="spl-cal-row">
+            <input
+              type="number" class="spl-input" bind:value={calRefSpl}
+              min="60" max="140" step="0.1"
+            />
+            <span class="spl-ref-lbl">dB SPL ref</span>
+            <button class="mini-btn" onclick={calibrateSpl}>Calibrate</button>
+          </div>
+          {#if splOffset !== 0}
+            <div class="hint">
+              Offset {splOffset > 0 ? '+' : ''}{splOffset.toFixed(1)} dB ·
+              <button class="lnk-btn" onclick={() => (splOffset = 0)}>Reset</button>
+            </div>
+          {:else}
+            <div class="hint">Play a known reference level, enter it, then tap Calibrate.</div>
+          {/if}
+        </section>
+      {/if}
 
       <!-- Resolution -->
       <section class="section">
@@ -504,4 +550,48 @@
   }
   .rail::-webkit-scrollbar { width: 8px; }
   .rail::-webkit-scrollbar-thumb { background: #1c2733; border-radius: 4px; }
+
+  /* spl header chip */
+  .ro-spl { border-color: rgba(163,230,53,.2); }
+  .ro-spl-cal { border-color: rgba(163,230,53,.4); }
+
+  /* spl section */
+  .spl-display {
+    display: flex; align-items: center; justify-content: space-between;
+    background: #10161f; border: 1px solid rgba(163,230,53,.15);
+    border-radius: 10px; padding: 11px 14px; margin-bottom: 10px;
+  }
+  .spl-cal { border-color: rgba(163,230,53,.4); }
+  .spl-readout { display: flex; align-items: baseline; gap: 6px; }
+  .spl-val {
+    font-family: 'IBM Plex Mono', monospace; font-size: 30px; font-weight: 600;
+    color: var(--lime);
+  }
+  .spl-unit { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--txt-mut); }
+  .spl-badge {
+    font-family: 'IBM Plex Mono', monospace; font-size: 9px; font-weight: 700;
+    letter-spacing: 1.5px; padding: 3px 7px; border-radius: 4px;
+    background: rgba(255,255,255,.05); color: var(--txt-mut); border: 1px solid var(--line);
+  }
+  .spl-badge-cal {
+    background: rgba(163,230,53,.12); color: var(--lime); border-color: rgba(163,230,53,.35);
+  }
+  .spl-cal-row {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
+  }
+  .spl-input {
+    width: 68px; padding: 7px 8px; font-family: 'IBM Plex Mono', monospace; font-size: 13px;
+    background: #131b25; border: 1px solid var(--line); border-radius: 7px;
+    color: var(--txt); outline: none; text-align: right; -moz-appearance: textfield;
+  }
+  .spl-input::-webkit-inner-spin-button,
+  .spl-input::-webkit-outer-spin-button { -webkit-appearance: none; }
+  .spl-input:focus { border-color: var(--lime); }
+  .spl-ref-lbl { font-size: 12px; color: var(--txt-mut); flex: 1; }
+  .lnk-btn {
+    background: none; border: 0; padding: 0; cursor: pointer;
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+    color: var(--txt-mut); text-decoration: underline;
+  }
+  .lnk-btn:hover { color: var(--txt); }
 </style>

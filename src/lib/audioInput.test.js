@@ -4,11 +4,13 @@ import { AudioSource, enumerateAudioInputs } from './audioInput.js';
 const mockStop = vi.fn();
 const mockStream = { getTracks: vi.fn(() => [{ stop: mockStop }]) };
 const mockGetFloatFrequencyData = vi.fn((arr) => arr.fill(-60));
+const mockGetFloatTimeDomainData = vi.fn((arr) => arr.fill(0));
 const mockAnalyser = {
-  fftSize: 0,
+  fftSize: 16384,
   smoothingTimeConstant: 0,
   frequencyBinCount: 8192,
   getFloatFrequencyData: mockGetFloatFrequencyData,
+  getFloatTimeDomainData: mockGetFloatTimeDomainData,
 };
 const mockClose = vi.fn();
 const mockCtx = {
@@ -131,6 +133,70 @@ describe('AudioSource', () => {
       mockAnalyser.getFloatFrequencyData.mockImplementation((arr) => arr.fill(0));
       const result = src.readBands([1000], 12);
       expect(result[0]).toBe(-2);
+    });
+  });
+
+  describe('readRMS()', () => {
+    it('returns null when not connected', () => {
+      const src = new AudioSource();
+      expect(src.readRMS()).toBeNull();
+    });
+
+    it('returns a number when connected', async () => {
+      const src = new AudioSource();
+      await src.connect('default');
+      // default mock fills with 0 → returns -144 (silence floor)
+      expect(typeof src.readRMS()).toBe('number');
+    });
+
+    it('returns -144 for silence (all-zero buffer)', async () => {
+      const src = new AudioSource();
+      await src.connect('default');
+      mockGetFloatTimeDomainData.mockImplementation((arr) => arr.fill(0));
+      expect(src.readRMS()).toBe(-144);
+    });
+
+    it('returns -144 for signals below the 1e-9 threshold', async () => {
+      const src = new AudioSource();
+      await src.connect('default');
+      mockGetFloatTimeDomainData.mockImplementation((arr) => arr.fill(1e-12));
+      expect(src.readRMS()).toBe(-144);
+    });
+
+    it('returns 0 dBFS for a full-scale constant signal (amplitude 1.0)', async () => {
+      const src = new AudioSource();
+      await src.connect('default');
+      mockGetFloatTimeDomainData.mockImplementation((arr) => arr.fill(1.0));
+      expect(src.readRMS()).toBeCloseTo(0, 5);
+    });
+
+    it('returns ~-6.02 dBFS for amplitude 0.5', async () => {
+      const src = new AudioSource();
+      await src.connect('default');
+      mockGetFloatTimeDomainData.mockImplementation((arr) => arr.fill(0.5));
+      // RMS of constant 0.5 = 0.5 → 20*log10(0.5) ≈ -6.0206
+      expect(src.readRMS()).toBeCloseTo(20 * Math.log10(0.5), 4);
+    });
+
+    it('calls getFloatTimeDomainData on the analyser', async () => {
+      const src = new AudioSource();
+      await src.connect('default');
+      src.readRMS();
+      expect(mockGetFloatTimeDomainData).toHaveBeenCalledTimes(1);
+    });
+
+    it('passes the timeData buffer to getFloatTimeDomainData', async () => {
+      const src = new AudioSource();
+      await src.connect('default');
+      src.readRMS();
+      expect(mockGetFloatTimeDomainData).toHaveBeenCalledWith(src.timeData);
+    });
+
+    it('returns null after disconnect', async () => {
+      const src = new AudioSource();
+      await src.connect('default');
+      src.disconnect();
+      expect(src.readRMS()).toBeNull();
     });
   });
 });

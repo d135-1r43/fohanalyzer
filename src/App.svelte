@@ -50,7 +50,14 @@
   let clock = $state('');
   let audioDevices = $state([]);
 
-  const isMicLive = $derived(micChan.startsWith('live:'));
+  const isMicLive  = $derived(micChan.startsWith('live:'));
+  const isSoloLive = $derived(soloChan.startsWith('live:'));
+  const signalStatus = $derived(
+    isMicLive && isSoloLive ? 'live signal'
+    : isMicLive             ? 'mic live · solo simulated'
+    : isSoloLive            ? 'mic simulated · solo live'
+    :                         'simulated signal'
+  );
   const micSpl = $derived(stats.micRmsDbfs != null ? stats.micRmsDbfs + splOffset : null);
 
   const micVoice  = $derived(MIC_INPUTS.find((o) => o.id === micChan));
@@ -372,7 +379,7 @@
         {/if}
       </section>
 
-      <div class="rail-foot">FOHanalyzer 2.0 · simulated signal</div>
+      <div class="rail-foot">FOHanalyzer {appVersion} · {signalStatus}</div>
     </aside>
   </div>
 </div>

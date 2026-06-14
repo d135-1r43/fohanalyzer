@@ -8,6 +8,8 @@
 [![Vite](https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white)](https://vitejs.dev)
 [![Live](https://img.shields.io/badge/live-fohanalyzer.com-22d3ee)](https://fohanalyzer.com)
 
+![FOHanalyzer screenshot](public/screenshot.png)
+
 Real-time dual-channel RTA for Front of House engineers. Overlays a measurement mic trace against a console solo bus so you can compare room response to source signal directly in the browser — no install required.
 
 Designed for iPad landscape. Also works on any modern desktop browser.

@@ -1,5 +1,5 @@
 <script>
-  let { value, options = [], audioDevices = [], onChange, color = '#22d3ee' } = $props();
+  let { value, options = [], audioDevices = [], onChange, color = '#22d3ee', chanIdx = 0, chanCount = 1, onChanIdxChange } = $props();
   let open = $state(false);
 
   // value is either a simulated id or 'live:<deviceId>'
@@ -63,6 +63,21 @@
       {/each}
     </div>
   {/if}
+  {#if isLive && chanCount > 1}
+    <div class="chan-idx-row">
+      <button
+        class="chan-idx-btn"
+        disabled={chanIdx === 0}
+        onclick={() => onChanIdxChange(chanIdx - 1)}
+      >‹</button>
+      <span class="chan-idx-label">Ch {chanIdx + 1} / {chanCount}</span>
+      <button
+        class="chan-idx-btn"
+        disabled={chanIdx >= chanCount - 1}
+        onclick={() => onChanIdxChange(chanIdx + 1)}
+      >›</button>
+    </div>
+  {/if}
 </div>
 
 <style>
@@ -108,4 +123,19 @@
     background: #a3e635; box-shadow: 0 0 5px #a3e635; flex: 0 0 auto;
   }
   .chan-check { font-size: 9px; }
+  .chan-idx-row {
+    display: flex; align-items: center; gap: 6px; margin-top: 6px;
+    padding: 4px 6px; background: #0a0e14; border: 1px solid var(--line);
+    border-radius: 8px;
+  }
+  .chan-idx-btn {
+    background: transparent; border: 0; color: var(--txt-dim); cursor: pointer;
+    font-size: 14px; padding: 0 6px; line-height: 1; transition: color .1s;
+  }
+  .chan-idx-btn:hover:not(:disabled) { color: var(--txt); }
+  .chan-idx-btn:disabled { opacity: .3; cursor: default; }
+  .chan-idx-label {
+    flex: 1; text-align: center; font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; color: var(--txt-dim);
+  }
 </style>

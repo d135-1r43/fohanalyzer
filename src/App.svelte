@@ -35,8 +35,12 @@
   let holdReset   = $state(0);
   let markers     = $state(true);
   let markerSource = $state('mic');
-  let micChan     = $state('ch32');
-  let soloChan    = $state('pfl');
+  let micChan      = $state('ch32');
+  let soloChan     = $state('pfl');
+  let micChanIdx   = $state(0);
+  let soloChanIdx  = $state(0);
+  let micChanCount  = $state(1);
+  let soloChanCount = $state(1);
   let ring        = $state({ active: false, fc: 2500, t0: 0 });
   let showTransfer    = $state(false);
   let captureNonce    = $state(0);
@@ -70,22 +74,26 @@
   $effect(() => {
     if (micChan.startsWith('live:')) {
       const deviceId = micChan.slice(5);
+      const idx = micChanIdx;
       if (!micSource) micSource = new AudioSource();
-      micSource.connect(deviceId);
+      micSource.connect(deviceId, idx).then(count => { micChanCount = count; });
     } else {
       micSource?.disconnect();
       micSource = null;
+      micChanCount = 1;
     }
   });
 
   $effect(() => {
     if (soloChan.startsWith('live:')) {
       const deviceId = soloChan.slice(5);
+      const idx = soloChanIdx;
       if (!soloSource) soloSource = new AudioSource();
-      soloSource.connect(deviceId);
+      soloSource.connect(deviceId, idx).then(count => { soloChanCount = count; });
     } else {
       soloSource?.disconnect();
       soloSource = null;
+      soloChanCount = 1;
     }
   });
 
@@ -211,14 +219,16 @@
           name="Measurement Mic" sub="Room · capture" color="#22d3ee"
           on={micOn} setOn={(v) => (micOn = v)} level={stats.micAvg}
           isMarker={markerSource === 'mic'} setMarker={() => (markerSource = 'mic')}
-          options={MIC_INPUTS} chan={micChan} setChan={(v) => (micChan = v)}
+          options={MIC_INPUTS} chan={micChan} setChan={(v) => { micChan = v; micChanIdx = 0; }}
+          chanIdx={micChanIdx} chanCount={micChanCount} setChanIdx={(v) => (micChanIdx = v)}
           {audioDevices}
         />
         <SourceCard
           name="Solo Bus" sub="Console · PFL/AFL" color="#f5a524"
           on={soloOn} setOn={(v) => (soloOn = v)} level={stats.soloAvg}
           isMarker={markerSource === 'solo'} setMarker={() => (markerSource = 'solo')}
-          options={SOLO_INPUTS} chan={soloChan} setChan={(v) => (soloChan = v)}
+          options={SOLO_INPUTS} chan={soloChan} setChan={(v) => { soloChan = v; soloChanIdx = 0; }}
+          chanIdx={soloChanIdx} chanCount={soloChanCount} setChanIdx={(v) => (soloChanIdx = v)}
           {audioDevices}
         />
       </section>

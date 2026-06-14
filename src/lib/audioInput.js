@@ -2,27 +2,55 @@ export class AudioSource {
   constructor() {
     this.ctx = null;
     this.analyser = null;
+    this.splitter = null;
+    this.merger = null;
     this.stream = null;
     this.freqData = null;
     this.timeData = null;
     this.deviceId = null;
+    this.channelCount = 1;
+    this.channelIndex = 0;
     this.error = null;
   }
 
-  async connect(deviceId) {
+  async connect(deviceId, channelIndex = 0) {
+    // Same device — just reroute the channel splitter
+    if (this.connected && this.deviceId === deviceId) {
+      this.setChannel(channelIndex);
+      return this.channelCount;
+    }
+
     this.disconnect();
     this.error = null;
     try {
       this.ctx = new AudioContext();
-      const constraints = {
-        audio: deviceId === 'default' ? true : { deviceId: { exact: deviceId }, echoCancellation: false, noiseSuppression: false, autoGainControl: false },
-      };
-      this.stream = await navigator.mediaDevices.getUserMedia(constraints);
+      const audioConstraints = deviceId === 'default'
+        ? { channelCount: { ideal: 32 } }
+        : { deviceId: { exact: deviceId }, channelCount: { ideal: 32 }, echoCancellation: false, noiseSuppression: false, autoGainControl: false };
+
+      this.stream = await navigator.mediaDevices.getUserMedia({ audio: audioConstraints });
+
+      const track = this.stream.getAudioTracks()[0];
+      this.channelCount = track.getSettings().channelCount || 1;
+
       const source = this.ctx.createMediaStreamSource(this.stream);
       this.analyser = this.ctx.createAnalyser();
       this.analyser.fftSize = 16384;
       this.analyser.smoothingTimeConstant = 0;
-      source.connect(this.analyser);
+
+      if (this.channelCount > 1) {
+        this.splitter = this.ctx.createChannelSplitter(this.channelCount);
+        this.merger = this.ctx.createChannelMerger(1);
+        source.connect(this.splitter);
+        const idx = Math.min(Math.max(0, channelIndex), this.channelCount - 1);
+        this.splitter.connect(this.merger, idx, 0);
+        this.merger.connect(this.analyser);
+        this.channelIndex = idx;
+      } else {
+        source.connect(this.analyser);
+        this.channelIndex = 0;
+      }
+
       this.freqData = new Float32Array(this.analyser.frequencyBinCount);
       this.timeData = new Float32Array(this.analyser.fftSize);
       this.deviceId = deviceId;
@@ -30,6 +58,15 @@ export class AudioSource {
       this.error = err.message;
       this.disconnect();
     }
+    return this.channelCount;
+  }
+
+  setChannel(channelIndex) {
+    if (!this.splitter || !this.merger || this.channelCount <= 1) return;
+    try { this.splitter.disconnect(this.merger, this.channelIndex, 0); } catch { /* already disconnected */ }
+    const idx = Math.min(Math.max(0, channelIndex), this.channelCount - 1);
+    this.splitter.connect(this.merger, idx, 0);
+    this.channelIndex = idx;
   }
 
   disconnect() {
@@ -37,10 +74,14 @@ export class AudioSource {
     if (this.ctx) this.ctx.close();
     this.ctx = null;
     this.analyser = null;
+    this.splitter = null;
+    this.merger = null;
     this.stream = null;
     this.freqData = null;
     this.timeData = null;
     this.deviceId = null;
+    this.channelCount = 1;
+    this.channelIndex = 0;
   }
 
   // Returns a Float32Array of dBFS values per band center, or null if not connected.

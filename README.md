@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/d135-1r43/fohanalyzer/actions/workflows/ci.yml/badge.svg)](https://github.com/d135-1r43/fohanalyzer/actions/workflows/ci.yml)
 [![Release](https://github.com/d135-1r43/fohanalyzer/actions/workflows/release.yml/badge.svg)](https://github.com/d135-1r43/fohanalyzer/actions/workflows/release.yml)
-[![GitHub release](https://img.shields.io/github/v/release/d135-1r43/fohanalyzer)](https://github.com/d135-1r43/fohanalyzer/releases)
+[![GitHub release](https://img.shields.io/github/v/release/d135-1r43/fohanalyzer?cacheSeconds=0)](https://github.com/d135-1r43/fohanalyzer/releases)
 [![License: MIT](https://img.shields.io/badge/license-MIT-22c55e)](LICENSE)
 [![Svelte](https://img.shields.io/badge/Svelte-5-FF3E00?logo=svelte&logoColor=white)](https://svelte.dev)
 [![Vite](https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white)](https://vitejs.dev)

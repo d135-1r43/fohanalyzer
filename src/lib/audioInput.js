@@ -24,14 +24,29 @@ export class AudioSource {
     this.error = null;
     try {
       this.ctx = new AudioContext();
-      const audioConstraints = deviceId === 'default'
-        ? { channelCount: { ideal: 32 } }
-        : { deviceId: { exact: deviceId }, channelCount: { ideal: 32 }, echoCancellation: false, noiseSuppression: false, autoGainControl: false };
+      const base = deviceId === 'default'
+        ? {}
+        : { deviceId: { exact: deviceId }, echoCancellation: false, noiseSuppression: false, autoGainControl: false };
 
-      this.stream = await navigator.mediaDevices.getUserMedia({ audio: audioConstraints });
+      // First ask for as many channels as the platform will give us.
+      this.stream = await navigator.mediaDevices.getUserMedia({ audio: { ...base, channelCount: { ideal: 32 } } });
+      let count = this.stream.getAudioTracks()[0].getSettings().channelCount || 0;
 
-      const track = this.stream.getAudioTracks()[0];
-      this.channelCount = track.getSettings().channelCount || 1;
+      // Chrome (especially on macOS) often delivers/reports mono for multichannel
+      // interfaces, and getSettings().channelCount is unreliable. If we didn't
+      // clearly get stereo-or-more, force an exact stereo request so we can reliably
+      // split L/R — exact:2 throws if the device truly can't do stereo.
+      if (count < 2) {
+        try {
+          const stereo = await navigator.mediaDevices.getUserMedia({ audio: { ...base, channelCount: { exact: 2 } } });
+          this.stream.getTracks().forEach((t) => t.stop());
+          this.stream = stereo;
+          count = 2;
+        } catch {
+          count = count || 1; // genuinely mono device
+        }
+      }
+      this.channelCount = count;
 
       const source = this.ctx.createMediaStreamSource(this.stream);
       this.analyser = this.ctx.createAnalyser();

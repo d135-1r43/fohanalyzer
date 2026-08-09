@@ -1,0 +1,429 @@
+/* ---------------------------------------------------------------------------
+   Base — fonts, reset, element defaults, layout primitives and utilities.
+   Everything here is either an element selector or a single-purpose helper.
+   Named UI pieces live in components.css.
+   --------------------------------------------------------------------------- */
+
+/* -- fonts ------------------------------------------------------------------
+   Self-hosted, subset to Latin and box-drawing, from the same OFL files the
+   app bundles. No third-party request is made from this site at any point:
+   nothing to consent to, nothing to leak, nothing to break when a CDN does.
+   font-display:swap renders in the fallback immediately rather than holding
+   the first paint hostage to a 24 KB download. */
+
+@font-face {
+	font-family: "Barlow";
+	src: url("../fonts/Barlow-Regular.woff2") format("woff2");
+	font-weight: 400;
+	font-style: normal;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: "Barlow";
+	src: url("../fonts/Barlow-Bold.woff2") format("woff2");
+	font-weight: 700;
+	font-style: normal;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: "IBM Plex Mono";
+	src: url("../fonts/IBMPlexMono-Regular.woff2") format("woff2");
+	font-weight: 400;
+	font-style: normal;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: "IBM Plex Mono";
+	src: url("../fonts/IBMPlexMono-Bold.woff2") format("woff2");
+	font-weight: 700;
+	font-style: normal;
+	font-display: swap;
+}
+
+/* -- reset ---------------------------------------------------------------- */
+
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+* {
+	margin: 0;
+}
+
+html {
+	-webkit-text-size-adjust: 100%;
+	/* Anchored sections must clear the sticky header. */
+	scroll-padding-top: calc(var(--header-h) + var(--sp-5));
+}
+
+@media (prefers-reduced-motion: no-preference) {
+	html {
+		scroll-behavior: smooth;
+	}
+}
+
+body {
+	background-color: var(--bg);
+	color: var(--txt);
+	font-family: var(--font-ui);
+	font-size: var(--fs-body);
+	line-height: var(--lh-body);
+	min-height: 100svh;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	/* The hero's glow bleeds wide; never let it open a horizontal scrollbar. */
+	overflow-x: hidden;
+}
+
+img,
+svg,
+canvas,
+video {
+	display: block;
+	max-width: 100%;
+}
+
+img {
+	height: auto;
+}
+
+input,
+button,
+textarea,
+select {
+	font: inherit;
+	color: inherit;
+}
+
+/* -- typography ----------------------------------------------------------- */
+
+h1,
+h2,
+h3,
+h4 {
+	line-height: var(--lh-heading);
+	font-weight: 700;
+	text-wrap: balance;
+	letter-spacing: -0.015em;
+}
+
+h1 {
+	font-size: var(--fs-display);
+	line-height: var(--lh-tight);
+	letter-spacing: -0.03em;
+}
+
+h2 {
+	font-size: var(--fs-h2);
+	letter-spacing: -0.02em;
+}
+
+h3 {
+	font-size: var(--fs-h3);
+}
+
+p {
+	text-wrap: pretty;
+}
+
+a {
+	color: var(--cyan);
+	text-decoration-color: color-mix(in srgb, var(--cyan) 40%, transparent);
+	text-underline-offset: 0.2em;
+	transition: color var(--dur-fast) var(--ease),
+		text-decoration-color var(--dur-fast) var(--ease);
+}
+
+a:hover {
+	text-decoration-color: currentColor;
+}
+
+strong,
+b {
+	font-weight: 700;
+	color: var(--txt);
+}
+
+code,
+kbd,
+samp,
+pre {
+	font-family: var(--font-mono);
+	font-size: 0.9em;
+}
+
+/* Inline code — a quieter version of the app's readout panel. */
+code {
+	background-color: var(--panel-2);
+	border: 1px solid var(--line-soft);
+	border-radius: var(--r-sm);
+	padding: 0.1em 0.4em;
+	color: var(--txt);
+	white-space: nowrap;
+}
+
+pre {
+	font-size: var(--fs-sm);
+	line-height: 1.7;
+	overflow-x: auto;
+	background-color: var(--panel);
+	border: 1px solid var(--line);
+	border-radius: var(--r-lg);
+	padding: var(--sp-4) var(--sp-5);
+	color: var(--txt-dim);
+	/* A code block is horizontally scrollable, so it is a focusable region for
+	   keyboard users who cannot drag it. */
+	tab-size: 4;
+}
+
+pre code {
+	background: none;
+	border: 0;
+	padding: 0;
+	white-space: pre;
+	font-size: inherit;
+}
+
+/* The shell prompt in a command block. Non-selectable so copying the block
+   does not carry a "$" into the terminal. */
+pre .prompt {
+	color: var(--txt-faint);
+	user-select: none;
+	-webkit-user-select: none;
+}
+
+pre .comment {
+	color: var(--txt-faint);
+}
+
+ul,
+ol {
+	padding-left: 1.25em;
+}
+
+li::marker {
+	color: var(--txt-mut);
+}
+
+li + li {
+	margin-top: var(--sp-2);
+}
+
+hr {
+	border: 0;
+	border-top: 1px solid var(--line-soft);
+	margin: var(--sp-6) 0;
+}
+
+/* -- focus ---------------------------------------------------------------- */
+/* One visible ring everywhere, on keyboard focus only. Never remove it. */
+
+:focus-visible {
+	outline: none;
+	box-shadow: var(--focus-ring);
+	border-radius: var(--r-sm);
+}
+
+/* -- selection ------------------------------------------------------------ */
+
+::selection {
+	background-color: color-mix(in srgb, var(--cyan) 30%, transparent);
+	color: var(--txt);
+}
+
+/* -- scrollbar ------------------------------------------------------------
+   The same treatment the app gives its rail: a thin rounded thumb on no
+   track, rather than a foreign widget bolted onto a dark surface. */
+
+* {
+	scrollbar-width: thin;
+	scrollbar-color: #23303e transparent;
+}
+
+::-webkit-scrollbar {
+	width: 11px;
+	height: 11px;
+}
+
+::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+	background-color: #23303e;
+	border-radius: var(--r-sm);
+	border: 3px solid transparent;
+	background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+	background-color: #33475b;
+	background-clip: content-box;
+}
+
+/* -- layout primitives ---------------------------------------------------- */
+
+.container {
+	width: 100%;
+	max-width: var(--container);
+	margin-inline: auto;
+	padding-inline: var(--gutter);
+}
+
+.container--narrow {
+	max-width: var(--container-narrow);
+}
+
+/* A major page section. Sections alternate nothing — separation comes from
+   the hairline rules and panels, not from alternating background bands. */
+.section {
+	padding-block: var(--section-y);
+}
+
+.section--tight {
+	padding-block: calc(var(--section-y) * 0.6);
+}
+
+/* A hairline above the section, matching the app's .section border. */
+.section--ruled {
+	border-top: 1px solid var(--line-soft);
+}
+
+/* -- utilities ------------------------------------------------------------ */
+
+.stack > * + * {
+	margin-top: var(--flow, var(--sp-4));
+}
+
+.measure {
+	max-width: var(--measure);
+}
+
+.center {
+	margin-inline: auto;
+	text-align: center;
+}
+
+.center .measure,
+.measure.center {
+	margin-inline: auto;
+}
+
+.mono {
+	font-family: var(--font-mono);
+}
+
+.dim {
+	color: var(--txt-dim);
+}
+
+.mut {
+	color: var(--txt-mut);
+}
+
+.lead {
+	font-size: var(--fs-body-lg);
+	color: var(--txt-dim);
+}
+
+.t-cyan {
+	color: var(--cyan);
+}
+
+.t-amber {
+	color: var(--amber);
+}
+
+.t-lime {
+	color: var(--lime);
+}
+
+/* Top margin, on the same scale as the tokens. Deliberately a small, closed
+   set rather than a full spacing framework: if a layout needs something these
+   do not cover, the block it belongs to should own the rule instead. */
+.mt-2 {
+	margin-top: var(--sp-2);
+}
+.mt-4 {
+	margin-top: var(--sp-4);
+}
+.mt-5 {
+	margin-top: var(--sp-5);
+}
+.mt-6 {
+	margin-top: var(--sp-6);
+}
+.mt-7 {
+	margin-top: var(--sp-7);
+}
+.mt-8 {
+	margin-top: var(--sp-8);
+}
+
+.align-start {
+	align-items: start;
+}
+
+/* -- accents --------------------------------------------------------------
+   --accent is the one property a component takes as an argument: .card,
+   .card__dot, .feature__icon and .callout all read it. Setting it with a
+   class rather than a style attribute keeps the pages free of inline CSS, so
+   the site can be served under a strict Content-Security-Policy with no
+   'unsafe-inline'. Custom properties inherit, so setting it on a card is
+   enough for everything inside it. */
+
+.acc-cyan {
+	--accent: var(--cyan);
+}
+.acc-amber {
+	--accent: var(--amber);
+}
+.acc-lime {
+	--accent: var(--lime);
+}
+.acc-red {
+	--accent: var(--red);
+}
+.acc-mut {
+	--accent: var(--txt-mut);
+}
+.acc-mid {
+	--accent: var(--zone-mid);
+}
+.acc-low-mid {
+	--accent: var(--zone-low-mid);
+}
+
+/* Visually hidden but read by assistive tech. */
+.visually-hidden {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+	border: 0;
+}
+
+/* -- motion --------------------------------------------------------------- */
+/* Honour the OS setting: no transitions, no animation, no smooth scroll.
+   The spectrum canvas checks the same query in JS and paints one static
+   frame instead of running its loop. */
+
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+		scroll-behavior: auto !important;
+	}
+}

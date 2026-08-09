@@ -1,0 +1,11 @@
+# Normalise line endings for everything we author.
+* text=auto eol=lf
+
+# The bundled font licences are verbatim upstream files. Leave them exactly as
+# received — a licence text should be byte-for-byte what was granted, not a
+# re-encoded copy of it.
+assets/fonts/OFL-*.txt -text
+
+# Binary assets: never touched, never diffed as text.
+*.woff2 binary
+*.png   binary

@@ -1,0 +1,5 @@
+# https://fohanalyzer.com
+User-agent: *
+Allow: /
+
+Sitemap: https://fohanalyzer.com/sitemap.xml

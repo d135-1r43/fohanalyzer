@@ -12,7 +12,7 @@
 
 ## What this is
 
-Two pages and a 404, served by nginx out of a container. There is no bundler, no
+Three pages and a 404, served by nginx out of a container. There is no bundler, no
 transpiler and no `package.json` — what is in this repository is byte-for-byte what is
 served. Editing a file and reloading the browser is the whole development loop.
 
@@ -22,6 +22,7 @@ dependencies and no config file of its own.
 ```
 index.html          the product, the open-source case, the contribution pitch
 contribute.html     the contributor guide
+impressum.html      the German legal notice (§ 5 DDG, § 18 Abs. 2 MStV)
 404.html            served by nginx for anything else
 assets/css/         tokens · base · components
 assets/js/          three custom elements, no dependencies
@@ -114,7 +115,7 @@ no dependencies, no network calls, no cookies.
 | `<foh-copy>` | Adds a copy button to a `<pre>` | The code block is still there and still selectable |
 | `<foh-reveal>` | Fades a block in on scroll | Content is simply visible |
 
-None of them create content. Both pages are complete, readable and navigable with the file
+None of them create content. Every page is complete, readable and navigable with the file
 blocked, which is also why they are indexable. The spectrum suspends when scrolled out of
 view or when the tab is hidden, and paints a single static frame under
 `prefers-reduced-motion`.
@@ -146,15 +147,32 @@ pyftsubset Barlow-Regular.ttf \
 
 ## Editing the content
 
-Both pages share the same header and footer markup, duplicated rather than templated —
-with no build step there is nowhere to compile a partial, and two copies of thirty lines is
-a smaller cost than adding a toolchain. **If you change the nav or the footer, change it in
-`index.html`, `contribute.html` and `404.html`.** A fourth page is the point at which that
-trade stops being worth it.
+The pages share the same header and footer markup, duplicated rather than templated —
+with no build step there is nowhere to compile a partial, and a few copies of thirty lines
+is a smaller cost than adding a toolchain. **If you change the nav or the footer, change it in
+`index.html`, `contribute.html`, `impressum.html` and `404.html`.**
+
+That is now four copies, which was the point at which this trade was going to stop being
+worth it. It still just about holds, because the footer changes rarely. A fifth page should
+come with a decision instead: either nginx SSI (`ssi on` plus an include, no build step, but
+it breaks opening the files from disk) or accepting a static site generator.
 
 `404.html` uses root-absolute asset paths (`/assets/…`) because it is served at whatever URL
 was requested; the other pages use relative paths so they also work opened straight from
 disk.
+
+## Legal
+
+`impressum.html` is the operator identification German law requires (§ 5 DDG) together with
+the responsible-person entry (§ 18 Abs. 2 MStV). It is written in German because that is the
+language the obligation is owed in.
+
+It also carries the data-protection statement, and one clause there is a claim the server has
+to keep: **IP addresses are truncated before they are written to the access log.** That is
+implemented by the `map $remote_addr $remote_addr_anon` block at the top of `nginx.conf`, and
+CI asserts it by making a request and checking the log shows `172.17.0.0` rather than
+`172.17.0.1`. Change one and you must change the other — the CI check exists so that you
+cannot quietly change only the config.
 
 ## Licence
 

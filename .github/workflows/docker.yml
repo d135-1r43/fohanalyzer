@@ -87,6 +87,10 @@ jobs:
           curl -fsS http://localhost:8080/                      > /dev/null
           curl -fsS http://localhost:8080/contribute            > /dev/null
           curl -fsS http://localhost:8080/contribute.html       > /dev/null
+          curl -fsS http://localhost:8080/impressum             > /dev/null
+          # The Impressum is legally required to stay reachable — fail loudly
+          # if it ever stops being served or loses its address block.
+          curl -fsS http://localhost:8080/impressum.html | grep -q "Scheyerer"
           curl -fsS http://localhost:8080/assets/css/tokens.css > /dev/null
           curl -fsS http://localhost:8080/assets/js/components.js > /dev/null
           curl -fsS http://localhost:8080/assets/fonts/Barlow-Regular.woff2 > /dev/null
@@ -95,6 +99,13 @@ jobs:
           # The CSP header has to survive the location blocks that serve assets.
           curl -sI http://localhost:8080/assets/css/base.css | grep -qi 'content-security-policy'
           docker logs site
+          # The Impressum promises truncated IPs in the access log. Prove it:
+          # the client is 172.17.0.1, so nothing but 172.17.0.0 may be logged.
+          docker logs site 2>&1 | grep -q '^172\.17\.0\.0 '
+          if docker logs site 2>&1 | grep -qE '^172\.17\.0\.1 '; then
+            echo "::error::access log kept a full IP address — nginx.conf and the Impressum disagree"
+            exit 1
+          fi
           docker rm -f site
 
       - name: Build and push

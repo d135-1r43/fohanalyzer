@@ -365,10 +365,6 @@ hr {
 	margin-top: var(--sp-8);
 }
 
-.align-start {
-	align-items: start;
-}
-
 /* -- accents --------------------------------------------------------------
    --accent is the one property a component takes as an argument: .card,
    .card__dot, .feature__icon and .callout all read it. Setting it with a

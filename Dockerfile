@@ -23,7 +23,7 @@ LABEL org.opencontainers.image.title="fohanalyzer.com" \
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 WORKDIR /usr/share/nginx/html
-COPY index.html contribute.html 404.html robots.txt sitemap.xml ./
+COPY index.html contribute.html impressum.html 404.html robots.txt sitemap.xml ./
 COPY assets/ ./assets/
 
 EXPOSE 8080

@@ -236,12 +236,16 @@
    The base is static; --link makes the whole card an interactive target.
    =========================================================================== */
 
+/* No height:100% here. Cards in a .grid row already match heights, because a
+   grid item stretches by default — and <foh-reveal> passes that through by
+   being a grid itself. Forcing 100% instead made a card fill whatever row it
+   sat in, which is wrong in a .split, where it stretched to match a much
+   taller text column and left the panel half empty. */
 .card {
 	background-color: var(--panel-2);
 	border: 1px solid var(--line-soft);
 	border-radius: var(--r-xl);
 	padding: var(--sp-5);
-	height: 100%;
 }
 
 .card__head {
@@ -355,10 +359,22 @@
 	--min: 220px;
 }
 
-/* A fixed two-column split that stacks below the breakpoint. */
+/* A fixed two-column split that stacks below the breakpoint.
+ *
+ * Columns align to the top by default. Centring was the original default and
+ * it was the wrong one: most splits here pair a text column with a shorter
+ * panel, where centring leaves the panel floating and stretches any .card
+ * inside it to a height its content does not fill. It is also a trap — a
+ * `.align-start` utility in base.css cannot override this, because base.css
+ * loads first and the two selectors weigh the same. Opt into centring with
+ * .split--center where a column genuinely wants it. */
 .split {
 	display: grid;
 	gap: var(--sp-7);
+	align-items: start;
+}
+
+.split--center {
 	align-items: center;
 }
 
@@ -921,6 +937,109 @@
 }
 
 /* ===========================================================================
+   prose — long-form body copy with its own heading rhythm. The Impressum is
+   the only user of this so far; anything text-heavy and legal-ish belongs
+   here rather than growing another block.
+   =========================================================================== */
+
+.prose {
+	max-width: var(--measure);
+	color: var(--txt-dim);
+}
+
+.prose h2 {
+	font-size: var(--fs-h3);
+	color: var(--txt);
+	margin-top: var(--sp-7);
+	margin-bottom: var(--sp-3);
+	letter-spacing: -0.01em;
+}
+
+.prose > h2:first-child {
+	margin-top: 0;
+}
+
+.prose p + p,
+.prose address + p {
+	margin-top: var(--sp-3);
+}
+
+/* An address block: mono, because it is data rather than prose, which is the
+   same call the app makes for anything you read rather than skim. */
+.addr {
+	font-family: var(--font-mono);
+	font-size: var(--fs-sm);
+	font-style: normal;
+	line-height: 1.9;
+	color: var(--txt);
+	background-color: var(--panel-2);
+	border: 1px solid var(--line-soft);
+	border-left: 2px solid var(--cyan);
+	border-radius: var(--r-md);
+	padding: var(--sp-4) var(--sp-5);
+	/* Never let a long address widen the page on a narrow screen. */
+	overflow-wrap: anywhere;
+}
+
+/* ===========================================================================
+   person — the maintainer block. One name, what they do, where to find them.
+   =========================================================================== */
+
+.person__name {
+	font-size: 1.15rem;
+	font-weight: 700;
+	color: var(--txt);
+}
+
+.person__role {
+	font-family: var(--font-mono);
+	font-size: var(--fs-micro);
+	letter-spacing: var(--tracking-micro);
+	text-transform: uppercase;
+	color: var(--cyan);
+	margin-top: var(--sp-1);
+}
+
+.person__links {
+	list-style: none;
+	padding: 0;
+	margin-top: var(--sp-4);
+	display: grid;
+	gap: var(--sp-2);
+}
+
+.person__links li + li {
+	margin-top: 0;
+}
+
+.person__links a {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--sp-2);
+	font-family: var(--font-mono);
+	font-size: var(--fs-sm);
+	text-decoration: none;
+	color: var(--txt-dim);
+	overflow-wrap: anywhere;
+}
+
+.person__links a:hover {
+	color: var(--cyan);
+}
+
+.person__links svg {
+	flex: none;
+	width: 15px;
+	height: 15px;
+	stroke: currentColor;
+	fill: none;
+	stroke-width: 1.8;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+	color: var(--txt-mut);
+}
+
+/* ===========================================================================
    cta — the closing panel on each page.
    =========================================================================== */
 
@@ -1041,9 +1160,16 @@
    =========================================================================== */
 
 foh-spectrum,
-foh-copy,
-foh-reveal {
+foh-copy {
 	display: block;
+}
+
+/* A single-item grid rather than a block: as a grid item of .grid the reveal
+   stretches to the row height, and being a grid itself it hands that height
+   down to the card inside. That is what keeps cards in a row the same height
+   without .card having to claim height:100% and misbehave elsewhere. */
+foh-reveal {
+	display: grid;
 }
 
 /* The canvas <foh-spectrum> appends. Its height comes from the element's

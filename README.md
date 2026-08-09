@@ -30,6 +30,7 @@ assets/fonts/       Barlow + IBM Plex Mono, subset to WOFF2
 assets/img/         logo and screenshots, taken from the app repository
 nginx.conf          server block: headers, caching, routing
 Dockerfile          static files on nginx-unprivileged
+docker-compose.yml  deployment behind Nginx Proxy Manager
 tools/make-og.py    regenerates the link-preview card
 ```
 
@@ -73,6 +74,42 @@ correctly before anything is published.
 ```bash
 docker pull ghcr.io/d135-1r43/fohanalyzer-website:latest
 ```
+
+### Behind Nginx Proxy Manager
+
+`docker-compose.yml` joins the container to the **external** `nginx-proxy-manager`
+network, which the NPM stack owns and this one only attaches to:
+
+```bash
+docker compose pull && docker compose up -d
+```
+
+Then add a proxy host in NPM pointing at the container:
+
+| Field | Value |
+|---|---|
+| Forward Hostname / IP | `fohanalyzer-website` |
+| Forward Port | `8080` |
+| Scheme | `http` |
+
+There is deliberately **no `ports:` mapping**. NPM reaches the container over the
+shared network, so publishing a host port would add a second, unproxied way in
+that bypasses the TLS and access rules configured in NPM. For the same division
+of labour, `nginx.conf` sets no HSTS header — certificates and HSTS belong to
+the proxy, and an HSTS header sent from behind it would be a promise this
+container cannot keep.
+
+`FOH_TAG` pins a version if you would rather not track `latest`:
+
+```bash
+FOH_TAG=sha-338056e docker compose up -d
+```
+
+The container runs with a read-only root filesystem, every capability dropped
+and `no-new-privileges`, with tmpfs on the three paths nginx writes to. That is
+not an aspiration: CI brings this exact compose file up against each build,
+requests the pages from another container by name over the shared network, and
+asserts the read-only and capability settings actually took.
 
 ## How the CSS is organised
 

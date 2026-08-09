@@ -108,6 +108,43 @@ jobs:
           fi
           docker rm -f site
 
+      # Bring the real docker-compose.yml up against the image just built. This
+      # is the deployment as written — read-only root filesystem, all
+      # capabilities dropped, tmpfs for the three paths nginx writes to — and
+      # the request comes from another container over the shared network by
+      # container name, which is exactly how Nginx Proxy Manager reaches it.
+      - name: Verify docker-compose.yml
+        run: |
+          # Owned by the NPM stack in production; created here so the external
+          # network the compose file expects exists.
+          docker network create nginx-proxy-manager
+
+          cat > /tmp/ci-override.yml <<'EOF'
+          services:
+            fohanalyzer-website:
+              image: fohanalyzer-site:test
+          EOF
+
+          docker compose -f docker-compose.yml -f /tmp/ci-override.yml config -q
+          docker compose -f docker-compose.yml -f /tmp/ci-override.yml up -d
+
+          probe() { docker run --rm --network nginx-proxy-manager curlimages/curl:8.11.1 "$@"; }
+          for _ in $(seq 1 30); do
+            probe -fsS http://fohanalyzer-website:8080/healthz >/dev/null 2>&1 && break
+            sleep 1
+          done
+          probe -fsS http://fohanalyzer-website:8080/           > /dev/null
+          probe -fsS http://fohanalyzer-website:8080/impressum  > /dev/null
+
+          # A read-only root that nginx silently coped with by not logging would
+          # pass the checks above; confirm it is genuinely read-only.
+          test "$(docker inspect -f '{{.HostConfig.ReadonlyRootfs}}' fohanalyzer-website)" = "true"
+          test "$(docker inspect -f '{{.HostConfig.CapDrop}}' fohanalyzer-website)" = "[ALL]"
+
+          docker compose -f docker-compose.yml -f /tmp/ci-override.yml logs
+          docker compose -f docker-compose.yml -f /tmp/ci-override.yml down
+          docker network rm nginx-proxy-manager
+
       - name: Build and push
         uses: docker/build-push-action@v6
         with:

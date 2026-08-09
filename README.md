@@ -30,6 +30,7 @@ assets/fonts/       Barlow + IBM Plex Mono, subset to WOFF2
 assets/img/         logo and screenshots, taken from the app repository
 nginx.conf          server block: headers, caching, routing
 Dockerfile          static files on nginx-unprivileged
+tools/make-og.py    regenerates the link-preview card
 ```
 
 ## Running it locally
@@ -144,6 +145,31 @@ pyftsubset Barlow-Regular.ttf \
   --unicodes="U+0000-00FF,U+2000-206F,U+2190-21FF,U+2500-257F,U+25A0-25FF" \
   --layout-features='*' --flavor=woff2 --output-file=Barlow-Regular.woff2
 ```
+
+## The link preview
+
+Every page carries a full Open Graph and Twitter card set: type, site name,
+locale, canonical URL, title, description, and an image with explicit dimensions
+and alt text. `impressum.html` declares `de_DE`, the rest `en_GB`.
+
+They all share one image, `assets/img/og.png`, at the 1200×630 that Open Graph
+actually wants — the app screenshot used to stand in for it, and at 1366×820 it
+was cropped awkwardly by every consumer that assumes 1.91∶1.
+
+The card is generated, not drawn by hand, so it cannot drift from the site:
+`tools/make-og.py` reads the same palette, the same `Logo.java` geometry and the
+same cyan→lime→amber ramp the hero uses. Change the wording or a colour and
+re-run it:
+
+```bash
+python3 -m venv .venv && .venv/bin/pip install Pillow
+.venv/bin/python tools/make-og.py
+```
+
+Pillow cannot read the subset WOFF2 files in `assets/fonts`, so the text is set
+from the original TTFs in the application repository, expected as a sibling
+checkout. Point `FOH_FONTS` elsewhere if yours lives somewhere else. The script
+is deterministic — the same inputs give a byte-identical PNG.
 
 ## Editing the content
 

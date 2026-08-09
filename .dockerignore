@@ -7,6 +7,8 @@
 .dockerignore
 Dockerfile
 README.md
+tools
+.venv
 *.md
 .DS_Store
 **/.DS_Store

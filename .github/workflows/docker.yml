@@ -40,6 +40,12 @@ jobs:
             -v "$PWD/nginx.conf:/etc/nginx/conf.d/default.conf:ro" \
             nginxinc/nginx-unprivileged:1.29-alpine nginx -t
 
+      # The CSP allow-lists the inline analytics snippet by hash, and a stale
+      # hash fails silently: the pages render, nothing errors, and no visit is
+      # ever counted. Catch it here instead of in production.
+      - name: Check the inline-script CSP hash is current
+        run: python3 tools/csp-hash.py
+
       - uses: docker/setup-buildx-action@v3
 
       - name: Log in to the registry

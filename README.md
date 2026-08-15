@@ -32,6 +32,7 @@ nginx.conf          server block: headers, caching, routing
 Dockerfile          static files on nginx-unprivileged
 docker-compose.yml  deployment behind Nginx Proxy Manager
 tools/make-og.py    regenerates the link-preview card
+tools/csp-hash.py   re-hashes the inline analytics snippet for the CSP
 ```
 
 ## Running it locally
@@ -67,9 +68,9 @@ CI builds the image on every push and publishes it to the GitHub Container Regis
 | tag `v1.2.3` | `:1.2.3`, `:1.2`, `:1`, `:latest` |
 | pull request | built and smoke-tested, not pushed |
 
-Every run validates `nginx.conf` with `nginx -t`, boots the built image, and checks that
-the pages, the assets, the extensionless URL, the 404 and the CSP header all come back
-correctly before anything is published.
+Every run validates `nginx.conf` with `nginx -t`, checks the inline-script CSP hash is
+current, boots the built image, and checks that the pages, the assets, the extensionless
+URL, the 404 and the CSP header all come back correctly before anything is published.
 
 ```bash
 docker pull ghcr.io/d135-1r43/fohanalyzer-website:latest
@@ -144,8 +145,8 @@ production — add a class instead.
 
 ## The JavaScript
 
-`assets/js/components.js` is the entire client-side story: one file, three custom elements,
-no dependencies, no network calls, no cookies.
+`assets/js/components.js` is nearly the entire client-side story: one file, three custom
+elements, no dependencies, no network calls, no cookies.
 
 | Element | Does | Without JS |
 |---|---|---|
@@ -161,6 +162,28 @@ view or when the tab is hidden, and paints a single static frame under
 Their `display: block` is declared in `components.css`, not injected from script — an
 unknown element defaults to `display: inline`, and setting it from JS would mislay the
 layout until the script ran.
+
+## Analytics
+
+The one thing the site loads from another origin is the tracker of a self-hosted
+[Plausible](https://plausible.io) instance at `plausible.herhoffer.net`. It sets no cookies,
+stores no identifier, and posts an aggregate pageview to `/api/event`; the counted domain is
+configured on the instance, not in the page. Every page carries the same two-tag snippet in
+its `<head>` — an `async` tag for the tracker and an inline stub that queues calls made
+before it arrives.
+
+That inline stub is the only inline script on the site, so instead of `'unsafe-inline'` the
+CSP allow-lists it by hash. **Edit the snippet and the hash stops matching, which silently
+kills tracking on every page** — the pages still render, nothing errors visibly. After any
+change to it:
+
+```bash
+tools/csp-hash.py   # verifies all four pages match, prints the new sha256-… for nginx.conf
+```
+
+Removing analytics again means deleting the snippet from the four pages and putting
+`script-src 'self'; … connect-src 'none'` back in `nginx.conf` — plus the `Datenschutz`
+section of `impressum.html` and the footer line, which both describe what is running.
 
 ## Fonts
 

@@ -37,6 +37,15 @@
 <link rel="stylesheet" href="assets/css/base.css">
 <link rel="stylesheet" href="assets/css/components.css">
 <script src="assets/js/components.js" defer></script>
+
+<!-- Privacy-friendly analytics: self-hosted Plausible, no cookies, no personal data.
+     The inline half is allow-listed in nginx.conf by SHA-256 hash, so it has to stay
+     byte-identical on every page. Re-run tools/csp-hash.py after touching it. -->
+<script async src="https://plausible.herhoffer.net/js/pa-y3gCzXvtaF6PA8rX-mQi9.js"></script>
+<script>
+  window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
+  plausible.init()
+</script>
 </head>
 
 <body>
@@ -184,11 +193,30 @@
 
 			<h2>Datenschutz</h2>
 			<p>
-				Diese Website setzt <strong>keine Cookies</strong>, bindet keine Inhalte Dritter ein und
-				verwendet weder Analyse- noch Tracking-Dienste. Es gibt keine Formulare, keine
-				Registrierung und keine Newsletter. Alle Schriftarten, Bilder, Stylesheets und Skripte
-				werden vom selben Server ausgeliefert; es findet keine Verbindung zu einem
-				Content-Delivery-Netzwerk statt.
+				Diese Website setzt <strong>keine Cookies</strong>. Es gibt keine Formulare, keine
+				Registrierung und keine Newsletter. Alle Schriftarten, Bilder und Stylesheets werden vom
+				selben Server ausgeliefert; es findet keine Verbindung zu einem Content-Delivery-Netzwerk
+				und zu keinem Werbe- oder Social-Media-Dienst statt.
+			</p>
+			<p>
+				Zur Reichweitenmessung wird <strong>Plausible Analytics</strong> eingesetzt, eine freie
+				Analyse-Software, die unter <a href="https://plausible.herhoffer.net">plausible.herhoffer.net</a>
+				auf einem eigenen Server in Deutschland betrieben wird. Eine Übermittlung an Dritte und
+				eine Verarbeitung außerhalb der EU finden nicht statt. Plausible
+				arbeitet <strong>ohne Cookies</strong> und ohne jede Kennung, die über einen Tag hinaus
+				Bestand hat: Erfasst werden ausschließlich aggregierte Angaben wie die aufgerufene Seite,
+				die Verweisquelle, Gerätetyp, Browser, Betriebssystem, Bildschirmgröße und das grob
+				bestimmte Herkunftsland. Die IP-Adresse wird nicht gespeichert, sondern nur flüchtig
+				verwendet, um daraus zusammen mit einem täglich wechselnden Zufallswert eine Prüfsumme zu
+				bilden; ein Rückschluss auf einzelne Personen, eine geräteübergreifende Wiedererkennung
+				oder ein Nutzerprofil sind damit nicht möglich. Rechtsgrundlage ist Art. 6 Abs. 1 lit. f
+				DSGVO; das berechtigte Interesse liegt in der statistischen Auswertung der Seitennutzung,
+				um das Angebot zu verbessern. Da weder Cookies gesetzt noch Informationen aus dem
+				Endgerät ausgelesen werden, ist eine Einwilligung nach § 25 TDDDG nicht erforderlich. Wer
+				die Messung dennoch unterbinden möchte, kann das Skript mit einem Inhaltsblocker
+				blockieren oder in der Browser-Konsole dauerhaft
+				<code>localStorage.plausible_ignore = "true"</code> setzen; die Website funktioniert in
+				beiden Fällen ohne Einschränkung weiter.
 			</p>
 			<p>
 				Beim Abruf der Seiten schreibt der Webserver technisch notwendige Zugriffsprotokolle
@@ -286,7 +314,7 @@
 		<p class="site-footer__legal">
 			FOHanalyzer is free software under <a href="https://github.com/d135-1r43/fohanalyzer-java/blob/main/LICENSE">GPL-3.0-or-later</a>, and comes with absolutely no warranty.<br>
 			Developed and maintained by <a href="https://herhoffer.net">Markus Herhoffer</a> · <a href="impressum.html">Impressum</a><br>
-			This site sets no cookies, loads nothing from a third party, and measures nothing about you.
+			This site sets no cookies and profiles nobody; visits are counted by a self-hosted, cookieless Plausible instance.
 		</p>
 	</div>
 </footer>

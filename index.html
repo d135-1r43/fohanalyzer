@@ -37,6 +37,15 @@
 <link rel="stylesheet" href="assets/css/base.css">
 <link rel="stylesheet" href="assets/css/components.css">
 <script src="assets/js/components.js" defer></script>
+
+<!-- Privacy-friendly analytics: self-hosted Plausible, no cookies, no personal data.
+     The inline half is allow-listed in nginx.conf by SHA-256 hash, so it has to stay
+     byte-identical on every page. Re-run tools/csp-hash.py after touching it. -->
+<script async src="https://plausible.herhoffer.net/js/pa-y3gCzXvtaF6PA8rX-mQi9.js"></script>
+<script>
+  window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
+  plausible.init()
+</script>
 </head>
 
 <body>
@@ -689,7 +698,7 @@
 			FOHanalyzer is free software under <a href="https://github.com/d135-1r43/fohanalyzer-java/blob/main/LICENSE">GPL-3.0-or-later</a>, and comes with absolutely no warranty.<br>
 			Developed and maintained by <a href="https://herhoffer.net">Markus Herhoffer</a> · <a href="impressum.html">Impressum</a><br>
 			Set in <a href="https://github.com/carrois/Barlow">Barlow</a> and <a href="https://github.com/IBM/plex">IBM Plex Mono</a>, both under the SIL Open Font License 1.1, self-hosted.<br>
-			This site sets no cookies, loads nothing from a third party, and measures nothing about you.
+			This site sets no cookies and profiles nobody; visits are counted by a self-hosted, cookieless Plausible instance.
 		</p>
 	</div>
 </footer>

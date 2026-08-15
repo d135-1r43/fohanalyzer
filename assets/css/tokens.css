@@ -2,7 +2,7 @@
    Design tokens — the single source of truth for the site's look.
 
    Ported from the app's own stylesheet,
-   fohanalyzer-java/src/main/resources/com/fohanalyzer/theme.css, so the site
+   fohanalyzer/src/main/resources/com/fohanalyzer/theme.css, so the site
    and the application it describes are the same design. The JavaFX names
    (-bg, -panel, -line, -txt-dim, …) are kept verbatim as --bg, --panel, … so
    a colour can be traced between the two files without a translation step.

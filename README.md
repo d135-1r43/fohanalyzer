@@ -5,7 +5,7 @@
 <h1 align="center">fohanalyzer.com</h1>
 
 <p align="center">
-  The website for <a href="https://github.com/d135-1r43/fohanalyzer-java">FOHanalyzer</a>,
+  The website for <a href="https://github.com/d135-1r43/fohanalyzer">FOHanalyzer</a>,
   an open-source dual-channel RTA for front-of-house engineers.<br>
   Static HTML, no framework, no build step.
 </p>
@@ -117,7 +117,7 @@ asserts the read-only and capability settings actually took.
 Three files, loaded in this order, each with one job:
 
 **`tokens.css`** — custom properties only, no selectors. It is a port of the app's own
-[`theme.css`](https://github.com/d135-1r43/fohanalyzer-java/blob/main/src/main/resources/com/fohanalyzer/theme.css),
+[`theme.css`](https://github.com/d135-1r43/fohanalyzer/blob/master/src/main/resources/com/fohanalyzer/theme.css),
 keeping the JavaFX names (`-panel`, `-txt-dim`, `-cyan`) as `--panel`, `--txt-dim`,
 `--cyan`, so a colour can be traced between the two files without translating it. Change a
 colour here and it changes everywhere.
@@ -228,7 +228,8 @@ python3 -m venv .venv && .venv/bin/pip install Pillow
 
 Pillow cannot read the subset WOFF2 files in `assets/fonts`, so the text is set
 from the original TTFs in the application repository, expected as a sibling
-checkout. Point `FOH_FONTS` elsewhere if yours lives somewhere else. The script
+checkout under either `fohanalyzer` or its pre-rename name `fohanalyzer-java`.
+Point `FOH_FONTS` elsewhere if yours lives somewhere else. The script
 is deterministic — the same inputs give a byte-identical PNG.
 
 ## Editing the content

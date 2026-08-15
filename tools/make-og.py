@@ -35,9 +35,21 @@ LIME = (163, 230, 53)
 AMBER = (245, 165, 36)
 
 ROOT = Path(__file__).resolve().parent.parent
-FONTS = Path(os.environ.get(
-	"FOH_FONTS",
-	ROOT.parent / "fohanalyzer-java/src/main/resources/com/fohanalyzer/fonts"))
+RESOURCES = "src/main/resources/com/fohanalyzer/fonts"
+
+# The app repository was renamed from fohanalyzer-java to fohanalyzer, so a
+# fresh sibling checkout and one made before the rename have different
+# directory names. Accept either rather than turning an older clone into an
+# error that only FOH_FONTS can clear. The new name is what the failure
+# message names when neither is there.
+def sibling_fonts():
+	for name in ("fohanalyzer", "fohanalyzer-java"):
+		candidate = ROOT.parent / name / RESOURCES
+		if (candidate / "Barlow-Bold.ttf").is_file():
+			return candidate
+	return ROOT.parent / "fohanalyzer" / RESOURCES
+
+FONTS = Path(os.environ["FOH_FONTS"]) if os.environ.get("FOH_FONTS") else sibling_fonts()
 OUT = ROOT / "assets/img/og.png"
 
 if not (FONTS / "Barlow-Bold.ttf").is_file():

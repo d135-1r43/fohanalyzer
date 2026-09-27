@@ -80,6 +80,10 @@ cp "target/$JAR" "$INPUT/"
 echo "==> rendering icon from the in-app logo"
 mvn -B -q javafx:run -Dapp.mainClass=com.fohanalyzer.dev.IconRenderer
 iconutil -c icns "target/$APP_NAME.iconset" -o "target/$APP_NAME.icns"
+# The dmg step takes its volume icon only from a resource dir, under this exact name; without
+# it the mounted disk shows jpackage's default Java icon.
+mkdir -p "target/dmg-resources"
+iconutil -c icns "target/$APP_NAME-volume.iconset" -o "target/dmg-resources/$APP_NAME-volume.icns"
 
 echo "==> jpackage app-image"
 jpackage \
@@ -124,6 +128,7 @@ if [ "$TYPE" != "app-image" ]; then
     --name "$APP_NAME" \
     --app-version "$APP_VERSION" \
     --app-image "$APP" \
+    --resource-dir "target/dmg-resources" \
     --dest "$DIST"
 
   if [ "$VERSION" != "$APP_VERSION" ]; then

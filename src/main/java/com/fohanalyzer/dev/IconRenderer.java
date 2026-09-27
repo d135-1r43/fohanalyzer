@@ -5,9 +5,19 @@ import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.SnapshotParameters;
+import javafx.scene.Group;
+import javafx.scene.Node;
 import javafx.scene.image.WritableImage;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.CycleMethod;
+import javafx.scene.paint.LinearGradient;
+import javafx.scene.paint.Stop;
+import javafx.scene.shape.Circle;
+import javafx.scene.shape.Line;
+import javafx.scene.shape.Rectangle;
+import javafx.scene.transform.Scale;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,7 +45,8 @@ public class IconRenderer extends Application
 {
 	private static final Logger log = LoggerFactory.getLogger(IconRenderer.class);
 
-	private static final Path OUT = Path.of("target/FOHanalyzer.iconset");
+	private static final Path APP_OUT = Path.of("target/FOHanalyzer.iconset");
+	private static final Path VOLUME_OUT = Path.of("target/FOHanalyzer-volume.iconset");
 
 	/**
 	 * {@code {pixels, filename}} — the set {@code iconutil} expects for a macOS
@@ -63,19 +74,55 @@ public class IconRenderer extends Application
 	@Override
 	public void start(Stage stage) throws Exception
 	{
-		Files.createDirectories(OUT);
+		Files.createDirectories(APP_OUT);
+		Files.createDirectories(VOLUME_OUT);
 		for (Object[] v : VARIANTS)
 		{
 			int px = (Integer)v[0];
-			write(px, OUT.resolve((String)v[1]).toFile());
+			write(new Logo(px * FILL), px, APP_OUT.resolve((String)v[1]).toFile());
+			write(drive(px), px, VOLUME_OUT.resolve((String)v[1]).toFile());
 		}
-		log.info("iconset written to {}", OUT.toAbsolutePath());
+		log.info("iconsets written to {} and {}", APP_OUT.toAbsolutePath(), VOLUME_OUT.toAbsolutePath());
 		Platform.exit();
 	}
 
-	private static void write(int px, File target) throws Exception
+	/**
+	 * An upright portable drive seen from the front, the logo on its face —
+	 * drawn in a 100-unit square and scaled to {@code px}.
+	 */
+	private static Node drive(int px)
 	{
-		StackPane holder = new StackPane(new Logo(px * FILL));
+		Rectangle body = new Rectangle(18, 6, 64, 88);
+		body.setArcWidth(16);
+		body.setArcHeight(16);
+		body.setFill(new LinearGradient(0, 0, 0, 1, true, CycleMethod.NO_CYCLE,
+			new Stop(0, Color.web("#2b3746")),
+			new Stop(1, Color.web("#121922"))));
+		body.setStroke(Color.web("#3b4b5e"));
+		body.setStrokeWidth(0.8);
+
+		// Front bezel: a seam across the foot of the face and an activity
+		// LED in the logo's lime.
+		Line seam = new Line(19, 78, 81, 78);
+		seam.setStroke(Color.web("#0a0e14"));
+		seam.setStrokeWidth(0.8);
+		Circle led = new Circle(50, 86, 1.8, Color.web("#a3e635"));
+
+		Logo logo = new Logo(44);
+		logo.relocate(28, 20);
+
+		Group art = new Group(body, seam, led, logo);
+		art.getTransforms().add(new Scale(px / 100.0, px / 100.0));
+		Pane canvas = new Pane(art);
+		canvas.setPrefSize(px, px);
+		canvas.setMinSize(px, px);
+		canvas.setMaxSize(px, px);
+		return canvas;
+	}
+
+	private static void write(Node icon, int px, File target) throws Exception
+	{
+		StackPane holder = new StackPane(icon);
 		holder.setPrefSize(px, px);
 		holder.setStyle("-fx-background-color: transparent;");
 		// A Scene is needed for layout, but never shown — this renders

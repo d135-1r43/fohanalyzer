@@ -220,14 +220,25 @@ public final class PreferencesWindow
 		state.splOffset.addListener((o, a, b) -> refreshStatus.run());
 		refreshStatus.run();
 
-		VBox sec = section("SPL meter", calRow,
-			hint("Play a known reference level, enter it, then tap Calibrate."), status);
+		Label howTo = hint("Play a known reference level, enter it, then tap Calibrate.");
+
+		// Says why the controls are off, since a disabled row alone reads as
+		// broken rather than as waiting for a live mic.
+		Label needsLive = hint("Choose a live measurement mic above to calibrate — a"
+			+ " simulated preset has no real level to calibrate against.");
+		needsLive.getStyleClass().add("prefs-notice");
+
+		VBox sec = section("SPL meter", needsLive, calRow, howTo, status);
 
 		// Only a live mic produces the RMS the calibration is computed from.
+		// Just the controls are disabled: the notice and the status stay
+		// readable, and the theme's disabled opacity is dimming enough.
 		Runnable vis = () -> {
 			boolean live = state.isMicLive();
-			sec.setDisable(!live);
-			sec.setOpacity(live ? 1.0 : 0.45);
+			calRow.setDisable(!live);
+			howTo.setDisable(!live);
+			needsLive.setVisible(!live);
+			needsLive.setManaged(!live);
 		};
 		state.micChan.addListener((o, a, b) -> vis.run());
 		vis.run();

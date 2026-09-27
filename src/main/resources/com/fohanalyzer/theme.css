@@ -60,6 +60,8 @@
     -fx-text-fill: -txt-mut;
 }
 .hint { -fx-font-size: 11px; -fx-text-fill: -txt-mut; -fx-wrap-text: true; }
+/* A hint that explains why controls below it are disabled, so it must stay legible. */
+.prefs-notice { -fx-text-fill: -amber; }
 .row-lbl { -fx-font-size: 13px; -fx-text-fill: -txt-dim; }
 .row-val { -fx-font-family: "IBM Plex Mono", monospace; -fx-font-size: 13px; -fx-text-fill: -txt; }
 .ctl-lbl { -fx-font-size: 13px; -fx-text-fill: -txt-dim; }

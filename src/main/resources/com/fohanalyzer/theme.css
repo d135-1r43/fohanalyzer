@@ -71,6 +71,16 @@
 .scroll-pane, .scroll-pane > .viewport { -fx-background-color: transparent; }
 .scroll-pane > .corner { -fx-background-color: transparent; }
 
+/* The rail's scroll pane is sized for the fixed-width rail plus the 11px vertical bar, so the
+   bar never narrows the viewport below the content and nothing can be panned sideways (a
+   trackpad swipe still scrolls horizontally with the h-bar policy at NEVER). The panel
+   background fills the bar's gutter. */
+.control-rail {
+    -fx-background-color: -panel;
+    -fx-padding: 0;
+    -fx-min-width: 337; -fx-pref-width: 337; -fx-max-width: 337;
+}
+
 .scroll-bar:vertical {
     -fx-background-color: transparent;
     -fx-pref-width: 11;

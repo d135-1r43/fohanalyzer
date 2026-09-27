@@ -143,6 +143,11 @@ The accent classes (`.acc-cyan`, `.acc-lime`, …) exist so that **no page conta
 `'unsafe-inline'`. If you add an inline style, it will silently stop being applied in
 production — add a class instead.
 
+Browsers keep everything under `/assets/` for a week, and the filenames are not
+content-hashed. So when a stylesheet changes, bump the `?v=` on its `<link>` in all four
+pages. If you don't, returning visitors keep the old CSS against the new HTML for up to
+seven days.
+
 ## The JavaScript
 
 `assets/js/components.js` is nearly the entire client-side story: one file, three custom

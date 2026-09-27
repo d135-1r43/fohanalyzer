@@ -9,3 +9,5 @@ assets/fonts/OFL-*.txt -text
 # Binary assets: never touched, never diffed as text.
 *.woff2 binary
 *.png   binary
+*.jpg   binary
+*.mp4   binary

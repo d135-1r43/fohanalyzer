@@ -16,7 +16,7 @@ Three pages and a 404, served by nginx out of a container. There is no bundler, 
 transpiler and no `package.json` — what is in this repository is byte-for-byte what is
 served. Editing a file and reloading the browser is the whole development loop.
 
-That is a deliberate match for the application it describes, which ships three runtime
+That is a deliberate match for the application it describes, which ships five runtime
 dependencies and no config file of its own.
 
 ```

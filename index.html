@@ -115,7 +115,7 @@
 				</div>
 
 				<p class="hero__meta">
-					<span>~37 MB .dmg</span>
+					<span>~46 MB .dmg</span>
 					<span>Bundled Java runtime</span>
 					<span>No account, no telemetry</span>
 				</p>
@@ -196,7 +196,9 @@
 				<h3 class="feature__title">Two traces, one plot</h3>
 				<p class="feature__text">
 					The measurement-mic trace sits over the console solo-bus trace, so room response
-					and source signal are read against each other rather than in turn.
+					and source signal are read against each other rather than in turn. A solo trim
+					closes the 10–20 dB the console leaves between them, and <em>Match</em> lines up
+					the averages in one click.
 				</p>
 			</article>
 			</foh-reveal>
@@ -224,8 +226,8 @@
 				<h3 class="feature__title">Real SPL, not dBFS</h3>
 				<p class="feature__text">
 					Calibrate once against a known reference level and the big lime readout is genuine
-					dB SPL. The calibration is written to disk the moment it changes — it is the
-					expensive thing to redo.
+					dB SPL, with a ± nudge for when it drifts from a hand-held meter. Until you
+					calibrate, the meter stays hidden rather than passing dBFS off as SPL.
 				</p>
 			</article>
 			</foh-reveal>
@@ -297,6 +299,20 @@
 			</article>
 			</foh-reveal>
 
+			<foh-reveal delay="120">
+			<article class="acc-lime card">
+				<div class="feature__icon">
+					<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 9h8M8 13h5"/><path d="M4 5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-7l-5 4v-4H6a2 2 0 0 1-2-2Z"/></svg>
+				</div>
+				<h3 class="feature__title">Ask an AI assistant</h3>
+				<p class="feature__text">
+					An optional, read-only MCP server lets Claude Code, Claude Desktop or ChatGPT read
+					the ring-out history, the readouts and the current band levels, and turn them into
+					mixing tips. It is off by default and only answers on this machine.
+				</p>
+			</article>
+			</foh-reveal>
+
 		</div>
 	</div>
 </section>
@@ -329,13 +345,13 @@
 			<div class="grid--sm grid">
 				<div class="readout">
 					<span class="readout__label">Runtime dependencies</span>
-					<span class="readout__value">3</span>
-					<span class="mt-2 feature__text">JavaFX, TarsosDSP, SLF4J. That is the whole list.</span>
+					<span class="readout__value">5</span>
+					<span class="mt-2 feature__text">JavaFX, TarsosDSP, SLF4J, and the MCP SDK on Jetty. That is the whole list.</span>
 				</div>
 				<div class="readout">
 					<span class="readout__label">Network calls</span>
 					<span class="readout__value">0</span>
-					<span class="mt-2 feature__text">No account, no licence check, no telemetry, no update ping.</span>
+					<span class="mt-2 feature__text">No account, no licence check, no telemetry, no update ping. The MCP server only listens.</span>
 				</div>
 				<div class="readout">
 					<span class="readout__label">Config files</span>
@@ -369,7 +385,7 @@
 		<p class="sec-title sec-title--amber">How it works</p>
 		<h2>A small codebase, on purpose</h2>
 		<p class="mt-4 lead measure">
-			Five packages, plainly named. If you have written any Java, you can find your way around
+			Six packages, plainly named. If you have written any Java, you can find your way around
 			this in an afternoon — which is rather the point of asking you to contribute.
 		</p>
 
@@ -386,6 +402,7 @@
 							<tr><th scope="row">dsp</th><td>Per-band averaging, smoothing, peak hold, stats</td></tr>
 							<tr><th scope="row">audio</th><td>Java Sound capture, FFT and pitch detection, device enumeration</td></tr>
 							<tr><th scope="row">ui</th><td>JavaFX canvas rendering and render loop, app shell, control rail, preferences</td></tr>
+							<tr><th scope="row">mcp</th><td>Analyzer history, MCP tools, and the embedded HTTP server that serves them</td></tr>
 							<tr><th scope="row">ui.controls</th><td>Toggle, Segmented, Meter, SourceCard, ChannelSelect, Logo</td></tr>
 						</tbody>
 					</table>
@@ -403,6 +420,8 @@
 							<tr><th scope="row"><a href="https://openjfx.io">JavaFX</a></th><td>UI toolkit and canvas</td><td>GPLv2 + CE</td></tr>
 							<tr><th scope="row"><a href="https://github.com/JorenSix/TarsosDSP">TarsosDSP</a></th><td>FFT, windows, YIN pitch detection</td><td>GPL-3.0</td></tr>
 							<tr><th scope="row"><a href="https://www.slf4j.org">SLF4J</a></th><td>Logging</td><td>MIT</td></tr>
+							<tr><th scope="row"><a href="https://github.com/modelcontextprotocol/java-sdk">MCP Java SDK</a></th><td>MCP protocol and Streamable HTTP transport</td><td>MIT</td></tr>
+							<tr><th scope="row"><a href="https://jetty.org">Jetty</a></th><td>Hosts the MCP server on localhost</td><td>EPL-2.0 / Apache-2.0</td></tr>
 							<tr><th scope="row">JUnit 5</th><td>Tests only</td><td>EPL-2.0</td></tr>
 						</tbody>
 					</table>

@@ -69,6 +69,12 @@ public final class AppState
 	public final ObjectProperty<Stats> stats = new SimpleObjectProperty<>(new Stats(0, -90, -90, -90, -90, null));
 	public final DoubleProperty splOffset = new SimpleDoubleProperty(0);
 	public final DoubleProperty calRefSpl = new SimpleDoubleProperty(94);
+	/**
+	 * Show the SPL readout in the main window. Off by default: uncalibrated it
+	 * is only dBFS under an SPL label, and most rigs have no calibrated mic.
+	 * Calibrating switches it on.
+	 */
+	public final BooleanProperty showSpl = new SimpleBooleanProperty(false);
 
 	public final ObservableList<AudioDevice> audioDevices = FXCollections.observableArrayList();
 

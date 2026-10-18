@@ -136,6 +136,35 @@ class SettingsTest
 	}
 
 	@Test
+	void mcpServerSettingsComeBack()
+	{
+		AppState first = new AppState();
+		settings.bind(first);
+		first.mcpEnabled.set(true);
+		first.mcpPort.set(9123);
+
+		AppState next = new AppState();
+		new Settings(node).bind(next);
+
+		assertTrue(next.mcpEnabled.get());
+		assertEquals(9123, next.mcpPort.get());
+	}
+
+	@Test
+	void aPrivilegedOrOutOfRangePortFallsBackToTheDefault()
+	{
+		node.putInt("mcpPort", 80);
+		AppState st = new AppState();
+		settings.bind(st);
+		assertEquals(AppState.DEFAULT_MCP_PORT, st.mcpPort.get());
+
+		node.putInt("mcpPort", 70000);
+		AppState again = new AppState();
+		new Settings(node).bind(again);
+		assertEquals(AppState.DEFAULT_MCP_PORT, again.mcpPort.get());
+	}
+
+	@Test
 	void anUntouchedStoreLeavesTheDefaultsAlone()
 	{
 		AppState st = new AppState();

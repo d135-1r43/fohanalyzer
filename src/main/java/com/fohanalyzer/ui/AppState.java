@@ -5,6 +5,7 @@ import com.fohanalyzer.audio.AudioSource;
 import com.fohanalyzer.dsp.Stats;
 import com.fohanalyzer.engine.Ring;
 import com.fohanalyzer.engine.Voice;
+import com.fohanalyzer.mcp.AnalyzerHistory;
 import javafx.beans.property.*;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -86,6 +87,16 @@ public final class AppState
 	public final BooleanProperty showSpl = new SimpleBooleanProperty(false);
 
 	public final ObservableList<AudioDevice> audioDevices = FXCollections.observableArrayList();
+
+	// MCP server: off unless the engineer turns it on, loopback only
+	public static final int DEFAULT_MCP_PORT = 8765;
+	public final BooleanProperty mcpEnabled = new SimpleBooleanProperty(false);
+	public final IntegerProperty mcpPort = new SimpleIntegerProperty(DEFAULT_MCP_PORT);
+	/** What the server is doing, in words, for the preferences window. */
+	public final StringProperty mcpStatus = new SimpleStringProperty("");
+
+	/** What the MCP tools read. Thread-safe; written from the FX thread. */
+	public final AnalyzerHistory history = new AnalyzerHistory();
 
 	// Live capture sources (plain, non-observable)
 	public AudioSource micSource;

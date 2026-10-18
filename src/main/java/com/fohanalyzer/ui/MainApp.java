@@ -5,6 +5,7 @@ import com.fohanalyzer.audio.AudioDevice;
 import com.fohanalyzer.audio.AudioInputs;
 import com.fohanalyzer.audio.AudioSource;
 import com.fohanalyzer.dsp.Stats;
+import com.fohanalyzer.mcp.McpHttpServer;
 import com.fohanalyzer.ui.controls.Logo;
 import com.fohanalyzer.ui.controls.Trim;
 import javafx.animation.Animation;
@@ -30,6 +31,8 @@ import org.slf4j.LoggerFactory;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Application root: header + analyzer + control rail, with live-audio wiring.
@@ -41,6 +44,16 @@ public class MainApp extends Application
 	private static final DateTimeFormatter CLOCK = DateTimeFormatter.ofPattern("HH:mm:ss");
 	private final AppState state = new AppState();
 	private final Settings settings = new Settings();
+	private final McpHttpServer mcpServer = new McpHttpServer(state.history);
+	/**
+	 * Starts and stops run here, one at a time and in order: binding a port can
+	 * block, and a toggle flicked twice must not race its own restart.
+	 */
+	private final ExecutorService mcpControl = Executors.newSingleThreadExecutor(r -> {
+		Thread t = new Thread(r, "mcp-control");
+		t.setDaemon(true);
+		return t;
+	});
 
 	private Label peakVal;
 	private Label micVal;
@@ -94,9 +107,11 @@ public class MainApp extends Application
 		// After enumeration: a stored live input can only be restored once we
 		// know whether its interface is actually present.
 		settings.bind(state);
+		wireMcp();
 
 		stage.setOnCloseRequest(e -> {
 			settings.flush();
+			mcpServer.stop();
 			if (state.micSource != null) state.micSource.disconnect();
 			if (state.soloSource != null) state.soloSource.disconnect();
 		});
@@ -324,6 +339,50 @@ public class MainApp extends Application
 			else
 				state.soloSource = null;
 			(isMic ? state.micChanCount : state.soloChanCount).set(1);
+		}
+	}
+
+	// ---- MCP server -------------------------------------------------------
+	/**
+	 * After {@link Settings#bind}, so a server left on last time comes back on
+	 * its stored port.
+	 */
+	private void wireMcp()
+	{
+		state.mcpEnabled.addListener((o, a, b) -> applyMcp());
+		state.mcpPort.addListener((o, a, b) -> applyMcp());
+		applyMcp();
+	}
+
+	private void applyMcp()
+	{
+		boolean on = state.mcpEnabled.get();
+		int port = state.mcpPort.get();
+		state.mcpStatus.set(on ? "Starting…" : "Off");
+		mcpControl.execute(() -> {
+			String status = switchMcp(on, port);
+			Platform.runLater(() -> state.mcpStatus.set(status));
+		});
+	}
+
+	/** Runs on {@link #mcpControl}; returns the status line to show. */
+	private String switchMcp(boolean on, int port)
+	{
+		if (!on)
+		{
+			mcpServer.stop();
+			return "Off";
+		}
+
+		try
+		{
+			mcpServer.start(port);
+			return "Listening on " + mcpServer.url();
+		}
+		catch (Exception e)
+		{
+			log.warn("could not start the MCP server on port {}", port, e);
+			return "Could not listen on port " + port + " — is it already in use?";
 		}
 	}
 

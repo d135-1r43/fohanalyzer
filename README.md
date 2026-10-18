@@ -37,6 +37,9 @@
   for what the plot did while you were not looking.
 - **Reference capture.** A dashed ghost of both traces, to A/B before against after EQ.
 - **1/1 to 1/24 octave** resolution, with smoothing and frame averaging.
+- **AI assistant access (MCP).** An optional, read-only MCP server lets a harness such as
+  Claude Code read the ring-out history, the readout history and the current band levels,
+  and turn them into mixing tips.
 - **Runs on real hardware or simulated presets** — the simulator means the whole app is
   usable without an interface plugged in.
 
@@ -126,6 +129,7 @@ indent), and put a long comment on its own line above the statement rather than 
 | `dsp` | Per-band averaging, smoothing, peak hold, stats |
 | `audio` | Java Sound capture + TarsosDSP FFT and pitch detection, device enumeration |
 | `ui` | JavaFX canvas rendering + render loop, app shell, control rail, preferences |
+| `mcp` | Analyzer history, MCP tools, and the embedded HTTP server that serves them |
 | `ui.controls` | Toggle, Segmented, Meter, SourceCard, ChannelSelect, Logo |
 
 | Dependency | For | Licence |
@@ -133,6 +137,8 @@ indent), and put a long comment on its own line above the statement rather than 
 | [JavaFX](https://openjfx.io) | UI toolkit and canvas | GPLv2 + Classpath Exception |
 | [TarsosDSP](https://github.com/JorenSix/TarsosDSP) `core` | FFT, window functions, YIN pitch detection | **GPL-3.0** |
 | [SLF4J](https://www.slf4j.org) api + simple | Logging | MIT |
+| [MCP Java SDK](https://github.com/modelcontextprotocol/java-sdk) (+ Jackson, Reactor) | MCP protocol and Streamable HTTP transport | MIT (Apache-2.0) |
+| [Jetty](https://jetty.org) 12 server + ee11 servlet | Hosts the MCP servlet on localhost | EPL-2.0 / **Apache-2.0** |
 | JUnit 5 | Tests only | EPL-2.0 |
 
 ### Audio capture
@@ -207,6 +213,60 @@ peak markers round to. Four consecutive 2048-sample blocks are estimated indepen
 the median is logged, so one glitched block cannot shift the frequency you go on to notch.
 The suggested cut comes from how far the loudest band stands above the mic average. With a
 simulated mic, only the *Inject feedback* practice mode is offered.
+
+### MCP server
+
+*Preferences → AI assistant (MCP)* turns on an MCP server inside the running app, at
+`http://127.0.0.1:8765/mcp` by default. It is off until switched on, binds to loopback
+only, and rejects requests whose `Origin` or `Host` is not local, so a web page open in a
+browser cannot reach it. The section shows the setup for the assistant you pick, with the
+port filled in:
+
+- **Claude Code** — run this, then start a new session:
+
+  ```sh
+  claude mcp add --transport http fohanalyzer http://127.0.0.1:8765/mcp
+  ```
+
+- **Claude Desktop** — its config file only launches local servers over stdio, so the
+  [`mcp-remote`](https://www.npmjs.com/package/mcp-remote) bridge (needs Node.js) relays to
+  the URL. Open *Settings → Developer → Edit Config*, add the entry under `mcpServers`, and
+  restart Claude:
+
+  ```json
+  {
+    "mcpServers": {
+      "fohanalyzer": {
+        "command": "npx",
+        "args": ["-y", "mcp-remote", "http://127.0.0.1:8765/mcp"]
+      }
+    }
+  }
+  ```
+
+- **ChatGPT** (desktop or web) — ChatGPT calls MCP servers from OpenAI's side, so it cannot
+  reach `127.0.0.1` directly. OpenAI's
+  [Secure MCP Tunnel](https://developers.openai.com/api/docs/guides/secure-mcp-tunnels)
+  bridges that: run `tunnel-client` on this computer with
+  `--mcp-server-url http://127.0.0.1:8765/mcp`, then add the tunnel in ChatGPT under
+  *Plugins → Add custom MCP server → Connection: Tunnel*. It needs a ChatGPT workspace the
+  tunnel is associated with. Do not expose the port through a public tunnel instead: the
+  server has no authentication, and it rejects non-local `Host` headers anyway.
+
+It is Streamable HTTP rather than stdio because the app stays open for the whole show and
+the assistant attaches to it, rather than launching it. Three read-only tools, each
+returning `structuredContent` against a declared `outputSchema`:
+
+| Tool | Returns |
+|---|---|
+| `get_ring_events` | Every ring logged with *Detect* this session (up to 500): frequency, note, zone, GEQ band, suggested cut |
+| `get_stats_history` | Once-a-second readouts for up to the last 30 minutes, and the frequencies that were loudest most often |
+| `get_band_snapshot` | The per-band mic and solo levels on screen now, and their transfer |
+
+Every sample says whether it came from a live input or the simulator, so simulated data is
+never mistaken for a measurement. The history lives in memory only and starts empty each
+launch; it is independent of the rail's six-entry feedback log, which can be cleared by
+hand.
 
 ### Typography
 

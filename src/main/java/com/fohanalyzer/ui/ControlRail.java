@@ -452,6 +452,7 @@ public final class ControlRail extends ScrollPane
 		FeedbackEntry entry = new FeedbackEntry(System.nanoTime(), fc, Engine.noteName(fc), band, cut,
 			LocalTime.now().format(HHMM));
 		state.feedbackLog.add(0, entry);
+		state.history.recordRing(fc, entry.note(), band, cut);
 		while (state.feedbackLog.size() > 6)
 			state.feedbackLog.remove(state.feedbackLog.size() - 1);
 		state.locateFreq.set(fc);

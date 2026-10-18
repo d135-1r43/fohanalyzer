@@ -262,4 +262,64 @@ class SignalStateTest
 			assertEquals(-25, st.soloPeak(), 1e-3);
 		}
 	}
+
+	@Nested
+	class SoloTrim
+	{
+		@Test
+		void offsetsTheDrawnTraceButNotTheMeasuredOne()
+		{
+			sig.setSoloTrim(12);
+			sig.update(fill(n, -40), fill(n, -50), NO_VOICE, NO_VOICE, centers, 0, 1);
+
+			assertEquals(-50, sig.dispSolo[2], 1e-4);
+			assertEquals(-38, sig.trimSolo[2], 1e-4);
+			assertEquals(-50, sig.holdSolo[2], 1e-4);
+			assertEquals(-38, sig.trimHoldSolo[2], 1e-4);
+		}
+
+		@Test
+		void leavesTheMicAlone()
+		{
+			sig.setSoloTrim(12);
+			sig.update(fill(n, -40), fill(n, -50), NO_VOICE, NO_VOICE, centers, 0, 1);
+
+			assertEquals(-40, sig.dispMic[2], 1e-4);
+		}
+
+		@Test
+		void aChangeShowsAtOnceRatherThanThroughTheSmoothing()
+		{
+			sig.update(fill(n, -50), fill(n, -50), NO_VOICE, NO_VOICE, centers, 0, 1);
+			sig.setSoloTrim(-10);
+			sig.update(fill(n, -50), fill(n, -50), NO_VOICE, NO_VOICE, centers, 0.9, 8);
+
+			assertEquals(-60, sig.trimSolo[2], 1e-3);
+		}
+
+		@Test
+		void statsReadTheTrimmedTraceAndRecordTheTrim()
+		{
+			Arrays.fill(sig.dispMic, -40);
+			Arrays.fill(sig.dispSolo, -50);
+			sig.setSoloTrim(4);
+
+			Stats st = sig.getStats(centers);
+
+			assertEquals(-46, st.soloAvg(), 1e-3);
+			assertEquals(-46, st.soloPeak(), 1e-3);
+			assertEquals(4, st.soloTrim(), 1e-9);
+		}
+
+		@Test
+		void matchingPutsTheSoloAverageOnTheMic()
+		{
+			Arrays.fill(sig.dispMic, -40);
+			Arrays.fill(sig.dispSolo, -55);
+			sig.setSoloTrim(4);
+
+			// Raw solo sits 15 dB under the mic, whatever the current trim.
+			assertEquals(15, sig.getStats(centers).matchingSoloTrim(), 1e-3);
+		}
+	}
 }

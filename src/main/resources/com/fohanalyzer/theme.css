@@ -167,6 +167,12 @@
     -fx-border-radius: 20; -fx-background-radius: 20; -fx-padding: 4 9 4 9; -fx-cursor: hand;
 }
 
+/* ---- trim ---- */
+.trim-btn { -fx-padding: 3 7 3 7; -fx-font-size: 11px; }
+.trim-val { -fx-font-family: "IBM Plex Mono", monospace; -fx-font-size: 11px; -fx-text-fill: -txt-mut; -fx-cursor: hand; }
+/* An active trim is shown in the solo accent: an offset trace must not pass for a raw one. */
+.trim-val.trim-on { -fx-text-fill: -amber; -fx-font-weight: bold; }
+
 /* ---- channel dropdown ---- */
 .chan-btn {
     -fx-background-color: #0a0e14; -fx-border-color: -line; -fx-border-radius: 8; -fx-background-radius: 8;

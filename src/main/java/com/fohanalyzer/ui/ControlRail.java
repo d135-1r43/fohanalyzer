@@ -10,6 +10,7 @@ import com.fohanalyzer.ui.controls.Meter;
 import com.fohanalyzer.ui.controls.Segmented;
 import com.fohanalyzer.ui.controls.SourceCard;
 import com.fohanalyzer.ui.controls.Toggle;
+import com.fohanalyzer.ui.controls.Trim;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
@@ -76,7 +77,32 @@ public final class ControlRail extends ScrollPane
 			state.soloOn, state.markerSource, "solo", AppState.SOLO_INPUTS,
 			state.soloChan, state.soloChanIdx, state.soloChanCount, state.audioDevices,
 			state.soloStereo);
+		soloCard.getChildren().add(soloTrimRow());
 		return section("Sources", micCard, soloCard);
+	}
+
+	/**
+	 * Offsets the solo trace onto the mic's level. One side is enough to line
+	 * the two up, and the mic is the one whose level means something.
+	 */
+	private HBox soloTrimRow()
+	{
+		Label lbl = new Label("Trim");
+		lbl.getStyleClass().add("ctl-lbl");
+		Region sp = new Region();
+		HBox.setHgrow(sp, Priority.ALWAYS);
+		Trim trim = new Trim(state.soloTrim, -AppState.SOLO_TRIM_MAX, AppState.SOLO_TRIM_MAX, true);
+		Button match = miniBtn("Match", e -> matchSoloTrim());
+		match.setTooltip(new Tooltip("Set the trim from the average Mic−Solo difference"));
+		HBox row = new HBox(6, lbl, sp, trim, match);
+		row.setAlignment(Pos.CENTER_LEFT);
+		return row;
+	}
+
+	private void matchSoloTrim()
+	{
+		double t = Math.round(state.stats.get().matchingSoloTrim() * 10) / 10.0;
+		state.soloTrim.set(Math.clamp(t, -AppState.SOLO_TRIM_MAX, AppState.SOLO_TRIM_MAX));
 	}
 
 	private void onStats(Stats st)
@@ -91,6 +117,10 @@ public final class ControlRail extends ScrollPane
 	}
 
 	// ---- SPL --------------------------------------------------------------
+	/** The range {@link Settings} accepts for the calibration offset. */
+	private static final double SPL_OFFSET_MIN = -200;
+	private static final double SPL_OFFSET_MAX = 200;
+
 	private Label splValue;
 	private Label splBadge;
 
@@ -110,8 +140,20 @@ public final class ControlRail extends ScrollPane
 		display.setAlignment(Pos.CENTER_LEFT);
 
 		// Calibrating is a set-once job and lives in the preferences
-		// window; what stays here is the reading itself.
-		VBox sec = section("SPL Meter", display);
+		// window; what stays here is the reading itself, and a nudge for when
+		// it drifts from a hand-held meter. The nudge moves the calibration
+		// offset itself, so there is one number, not two that stack.
+		Label nudgeLbl = new Label("Match a reference meter");
+		nudgeLbl.getStyleClass().add("ctl-lbl");
+		Region sp = new Region();
+		HBox.setHgrow(sp, Priority.ALWAYS);
+		Trim nudge = new Trim(state.splOffset, SPL_OFFSET_MIN, SPL_OFFSET_MAX, false);
+		HBox nudgeRow = new HBox(nudgeLbl, sp, nudge);
+		nudgeRow.setAlignment(Pos.CENTER_LEFT);
+		// Nudging an uncalibrated meter would quietly turn dBFS into "SPL".
+		nudgeRow.disableProperty().bind(state.splOffset.isEqualTo(0));
+
+		VBox sec = section("SPL Meter", display, nudgeRow);
 
 		// visible only when the mic source is live and the meter is wanted
 		Runnable vis = () -> {
@@ -494,7 +536,7 @@ public final class ControlRail extends ScrollPane
 	{
 		Alert alert = new Alert(Alert.AlertType.CONFIRMATION,
 			"Discard saved settings and return to defaults?\n\n"
-				+ "This clears the SPL calibration, the selected inputs and the analysis options.",
+				+ "This clears the SPL calibration, the solo trim, the selected inputs and the analysis options.",
 			ButtonType.CANCEL, ButtonType.OK);
 		alert.setHeaderText("Reset saved settings");
 		alert.initOwner(getScene() != null ? getScene().getWindow() : null);

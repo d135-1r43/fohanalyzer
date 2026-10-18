@@ -1,13 +1,19 @@
 package com.fohanalyzer.ui;
 
+import com.fohanalyzer.mcp.McpHttpServer;
 import com.fohanalyzer.ui.controls.ChannelSelect;
+import com.fohanalyzer.ui.controls.Segmented;
 import com.fohanalyzer.ui.controls.Toggle;
 import javafx.application.Platform;
+import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
+import javafx.scene.input.Clipboard;
+import javafx.scene.input.ClipboardContent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
@@ -18,11 +24,13 @@ import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 
+import java.util.LinkedHashMap;
 import java.util.Locale;
+import java.util.Map;
 
 /**
- * The set-once settings: which device feeds each source, and the SPL
- * calibration.
+ * The set-once settings: which device feeds each source, the SPL calibration,
+ * and the MCP server an AI assistant can read the analyzer through.
  *
  * <p>
  * Both are decided when the rig is patched and then left alone, so they sit
@@ -39,6 +47,10 @@ public final class PreferencesWindow
 	 * for, and the height is always whatever the content needs at that width.
 	 */
 	private static final double WIDTH = 420;
+
+	private static final int CLAUDE_CODE = 0;
+	private static final int CLAUDE_DESKTOP = 1;
+	private static final int CHATGPT = 2;
 
 	private final AppState state;
 	private final Settings settings;
@@ -128,7 +140,7 @@ public final class PreferencesWindow
 	 */
 	VBox buildRoot()
 	{
-		body = new VBox(18, sourcesSection(), splSection());
+		body = new VBox(18, sourcesSection(), splSection(), mcpSection());
 		body.getStyleClass().add("prefs-body");
 
 		Button close = new Button("Done");
@@ -253,6 +265,130 @@ public final class PreferencesWindow
 		state.micChan.addListener((o, a, b) -> vis.run());
 		vis.run();
 		return sec;
+	}
+
+	// ---- MCP server -------------------------------------------------------
+	private VBox mcpSection()
+	{
+		Label onLbl = new Label("Serve on localhost");
+		onLbl.getStyleClass().add("ctl-lbl");
+		Region sp = new Region();
+		HBox.setHgrow(sp, Priority.ALWAYS);
+		HBox onRow = new HBox(onLbl, sp, new Toggle(state.mcpEnabled, "#b794f6"));
+		onRow.setAlignment(Pos.CENTER_LEFT);
+
+		// Committed on Enter or when the field loses focus, not per keystroke:
+		// every new port restarts the server, and typing 8765 would otherwise
+		// bind 8, 87 and 876 on the way.
+		TextField port = new TextField(Integer.toString(state.mcpPort.get()));
+		port.getStyleClass().add("spl-input");
+		port.setPrefWidth(76);
+		Runnable commit = () -> {
+			try
+			{
+				int p = Integer.parseInt(port.getText().trim());
+				if (Settings.isValidPort(p))
+				{
+					state.mcpPort.set(p);
+					return;
+				}
+			}
+			catch (NumberFormatException ignored)
+			{
+			}
+			port.setText(Integer.toString(state.mcpPort.get()));
+		};
+		port.setOnAction(e -> commit.run());
+		port.focusedProperty().addListener((o, a, focused) -> {
+			if (!focused) commit.run();
+		});
+		state.mcpPort.addListener((o, a, b) -> port.setText(Integer.toString(b.intValue())));
+		Label portLbl = new Label("port");
+		portLbl.getStyleClass().add("hint");
+		HBox portRow = new HBox(8, port, portLbl);
+		portRow.setAlignment(Pos.CENTER_LEFT);
+
+		Label status = new Label();
+		status.getStyleClass().add("hint");
+		status.textProperty().bind(state.mcpStatus);
+
+		Label howTo = hint("Lets an AI assistant read the ring-out log, the readout history and"
+			+ " the current band levels, to give mixing tips. Read-only, and reachable from this"
+			+ " computer only. Set up your assistant:");
+
+		// Which assistant the setup below is for. A view choice, not a setting:
+		// it only picks which instructions to show.
+		IntegerProperty client = new SimpleIntegerProperty(CLAUDE_CODE);
+		Map<Integer, String> clients = new LinkedHashMap<>();
+		clients.put(CLAUDE_CODE, "Claude Code");
+		clients.put(CLAUDE_DESKTOP, "Claude Desktop");
+		clients.put(CHATGPT, "ChatGPT");
+		Segmented clientSelect = new Segmented(client, clients);
+
+		Label clientHint = hint("");
+		TextField command = new TextField();
+		command.setEditable(false);
+		command.getStyleClass().add("spl-input");
+		HBox.setHgrow(command, Priority.ALWAYS);
+		Runnable refreshCommand = () -> {
+			String url = "http://127.0.0.1:" + state.mcpPort.get() + McpHttpServer.ENDPOINT;
+			clientHint.setText(setupHint(client.get()));
+			command.setText(setupText(client.get(), url));
+			command.positionCaret(0);
+		};
+		state.mcpPort.addListener((o, a, b) -> refreshCommand.run());
+		client.addListener((o, a, b) -> refreshCommand.run());
+		refreshCommand.run();
+		Button copy = new Button("Copy");
+		copy.getStyleClass().add("mini-btn");
+		copy.setOnAction(e -> {
+			ClipboardContent content = new ClipboardContent();
+			content.putString(command.getText());
+			Clipboard.getSystemClipboard().setContent(content);
+		});
+		HBox commandRow = new HBox(8, command, copy);
+		commandRow.setAlignment(Pos.CENTER_LEFT);
+
+		Runnable vis = () -> {
+			boolean on = state.mcpEnabled.get();
+			portRow.setDisable(!on);
+			clientSelect.setDisable(!on);
+			commandRow.setDisable(!on);
+		};
+		state.mcpEnabled.addListener((o, a, b) -> vis.run());
+		vis.run();
+
+		return section("AI assistant (MCP)", onRow, portRow, status, howTo, clientSelect,
+			clientHint, commandRow);
+	}
+
+	private static String setupHint(int client)
+	{
+		return switch (client)
+		{
+			// Claude Desktop only launches local servers over stdio, so the
+			// mcp-remote bridge turns its stdio into requests to this URL.
+			case CLAUDE_DESKTOP -> "Needs Node.js. In Claude Desktop open Settings → Developer"
+				+ " → Edit Config, paste this inside \"mcpServers\", save, and restart Claude.";
+			// ChatGPT calls MCP servers from OpenAI's side, which cannot reach
+			// this computer's loopback without the tunnel.
+			case CHATGPT -> "ChatGPT reaches this computer only through OpenAI's Secure MCP"
+				+ " Tunnel. Run tunnel-client here with this URL as --mcp-server-url, then add"
+				+ " the tunnel in ChatGPT under Plugins → Add custom MCP server. Needs a"
+				+ " workspace with tunnels enabled.";
+			default -> "Run this in a terminal, then start a new Claude Code session.";
+		};
+	}
+
+	private static String setupText(int client, String url)
+	{
+		return switch (client)
+		{
+			case CLAUDE_DESKTOP -> "\"fohanalyzer\": {\"command\": \"npx\", \"args\": [\"-y\","
+				+ " \"mcp-remote\", \"" + url + "\"]}";
+			case CHATGPT -> url;
+			default -> "claude mcp add --transport http fohanalyzer " + url;
+		};
 	}
 
 	private void calibrate()

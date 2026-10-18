@@ -42,6 +42,8 @@ public final class Settings
 	private static final String MARKERS = "markers";
 	private static final String MARKER_SOURCE = "markerSource";
 	private static final String SHOW_TRANSFER = "showTransfer";
+	private static final String MCP_ENABLED = "mcpEnabled";
+	private static final String MCP_PORT = "mcpPort";
 	private static final String PREFS_X = "prefsWinX";
 	private static final String PREFS_Y = "prefsWinY";
 	private static final String PREFS_W = "prefsWinW";
@@ -60,6 +62,13 @@ public final class Settings
 	private static final Set<Integer> FRACTIONS = Set.of(1, 3, 6, 12, 24);
 	private static final Set<Integer> AVERAGES = Set.of(1, 2, 4, 8, 16);
 	private static final Set<String> MARKER_SOURCES = Set.of("mic", "solo");
+
+	/**
+	 * Unprivileged ports only: below 1024 needs root on macOS and Linux, so the
+	 * server could never bind there.
+	 */
+	public static final int MIN_PORT = 1024;
+	public static final int MAX_PORT = 65535;
 
 	private final Preferences prefs;
 
@@ -128,6 +137,8 @@ public final class Settings
 		state.soloTrim.set(d.soloTrim.get());
 		state.micChan.set(d.micChan.get());
 		state.soloChan.set(d.soloChan.get());
+		state.mcpEnabled.set(d.mcpEnabled.get());
+		state.mcpPort.set(d.mcpPort.get());
 
 		// Wipe last: if bind() has run, the assignments above have already
 		// fired their listeners and written the defaults back, so clearing
@@ -220,6 +231,10 @@ public final class Settings
 		st.showTransfer.set(prefs.getBoolean(SHOW_TRANSFER, st.showTransfer.get()));
 		st.soloStereo.set(prefs.getBoolean(SOLO_STEREO, st.soloStereo.get()));
 
+		int port = prefs.getInt(MCP_PORT, st.mcpPort.get());
+		if (isValidPort(port)) st.mcpPort.set(port);
+		st.mcpEnabled.set(prefs.getBoolean(MCP_ENABLED, st.mcpEnabled.get()));
+
 		restoreSource(st, true);
 		restoreSource(st, false);
 	}
@@ -247,6 +262,11 @@ public final class Settings
 		// Only the lower bound is knowable here; the channel count arrives when
 		// the line opens, and MainApp clamps against it then.
 		idx.set(Math.max(0, prefs.getInt(isMic ? MIC_CHAN_IDX : SOLO_CHAN_IDX, 0)));
+	}
+
+	public static boolean isValidPort(int port)
+	{
+		return port >= MIN_PORT && port <= MAX_PORT;
 	}
 
 	private static List<InputPreset> presets(boolean isMic)
@@ -293,5 +313,7 @@ public final class Settings
 		st.markerSource.addListener((o, a, v) -> prefs.put(MARKER_SOURCE, v));
 		st.showTransfer.addListener((o, a, v) -> prefs.putBoolean(SHOW_TRANSFER, v));
 		st.showSpl.addListener((o, a, v) -> prefs.putBoolean(SHOW_SPL, v));
+		st.mcpEnabled.addListener((o, a, v) -> prefs.putBoolean(MCP_ENABLED, v));
+		st.mcpPort.addListener((o, a, v) -> prefs.putInt(MCP_PORT, v.intValue()));
 	}
 }

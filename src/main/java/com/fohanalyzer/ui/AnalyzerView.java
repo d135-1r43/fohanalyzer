@@ -131,6 +131,16 @@ public final class AnalyzerView extends Region
 			Stats s = sig.getStats(centers);
 			if (state.micSource != null) s = s.withMicRms(state.micSource.readRMS());
 			state.stats.set(s);
+
+			boolean micLive = liveMic != null;
+			boolean soloLive = liveSolo != null;
+			// An offset of 0 is what the preferences window reports as not
+			// calibrated, so there is no SPL to hand out then.
+			Double spl = s.micRmsDbfs() != null && state.splOffset.get() != 0
+				? s.micRmsDbfs() + state.splOffset.get()
+				: null;
+			state.history.recordStats(s, spl, micLive, soloLive);
+			state.history.recordBands(frac, centers, sig.dispMic, sig.dispSolo, micLive, soloLive);
 		}
 
 		int captureNonce = state.captureNonce.get();

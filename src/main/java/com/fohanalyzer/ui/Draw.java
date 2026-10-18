@@ -2,6 +2,7 @@ package com.fohanalyzer.ui;
 
 import com.fohanalyzer.engine.Engine;
 import com.fohanalyzer.engine.Zone;
+import com.fohanalyzer.ui.controls.Trim;
 import javafx.geometry.VPos;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.effect.BlendMode;
@@ -359,7 +360,7 @@ public final class Draw
 	}
 
 	public static void drawHoverTooltip(GraphicsContext g, Mouse mouse, double[] centers, double[] xs,
-		float[] dispMic, float[] dispSolo, double width, double plotW,
+		float[] dispMic, float[] dispSolo, double soloTrim, double width, double plotW,
 		double plotH, boolean micOn, boolean soloOn)
 	{
 		double mx = mouse.x();
@@ -393,7 +394,9 @@ public final class Draw
 		List<Line> lines = new ArrayList<>();
 		lines.add(new Line(fl + "  " + Engine.noteName(centers[idx]), Color.web("#e7eef6")));
 		if (micOn) lines.add(new Line("MIC  " + fmt1(micV) + " dB", Color.web("#22d3ee")));
-		if (soloOn) lines.add(new Line("SOLO " + fmt1(soloV) + " dB", Color.web("#f5a524")));
+		// An offset trace must not be read as the level the bus is at.
+		String trim = soloTrim != 0 ? "  (trim " + Trim.fmtDb(soloTrim) + ")" : "";
+		if (soloOn) lines.add(new Line("SOLO " + fmt1(soloV) + " dB" + trim, Color.web("#f5a524")));
 		if (micOn && soloOn)
 		{
 			double d = micV - soloV;

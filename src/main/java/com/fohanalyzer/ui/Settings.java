@@ -12,7 +12,8 @@ import java.util.prefs.Preferences;
 
 /**
  * Persists the parts of {@link AppState} an engineer would resent re-entering:
- * SPL calibration, the selected inputs, and the analysis/view options.
+ * SPL calibration, the selected inputs and their trim, and the analysis/view
+ * options.
  *
  * <p>
  * Backed by {@link Preferences}, so there is no dependency and no file format
@@ -33,6 +34,7 @@ public final class Settings
 	private static final String MIC_CHAN_IDX = "micChanIdx";
 	private static final String SOLO_CHAN_IDX = "soloChanIdx";
 	private static final String SOLO_STEREO = "soloStereo";
+	private static final String SOLO_TRIM = "soloTrim";
 	private static final String FRAC = "frac";
 	private static final String SMOOTHING = "smoothing";
 	private static final String AVG_N = "avgN";
@@ -123,6 +125,7 @@ public final class Settings
 		state.micChanIdx.set(d.micChanIdx.get());
 		state.soloChanIdx.set(d.soloChanIdx.get());
 		state.soloStereo.set(d.soloStereo.get());
+		state.soloTrim.set(d.soloTrim.get());
 		state.micChan.set(d.micChan.get());
 		state.soloChan.set(d.soloChan.get());
 
@@ -198,6 +201,8 @@ public final class Settings
 			st.calRefSpl.get()));
 		st.smoothing.set(clamp(prefs.getDouble(SMOOTHING, st.smoothing.get()), 0, 0.95,
 			st.smoothing.get()));
+		st.soloTrim.set(clamp(prefs.getDouble(SOLO_TRIM, st.soloTrim.get()), -AppState.SOLO_TRIM_MAX,
+			AppState.SOLO_TRIM_MAX, st.soloTrim.get()));
 		// A store from before this setting existed has no entry for it; keep
 		// the meter of whoever had already calibrated rather than hiding it on
 		// them after an update.
@@ -279,6 +284,7 @@ public final class Settings
 		st.micChanIdx.addListener((o, a, v) -> prefs.putInt(MIC_CHAN_IDX, v.intValue()));
 		st.soloChanIdx.addListener((o, a, v) -> prefs.putInt(SOLO_CHAN_IDX, v.intValue()));
 		st.soloStereo.addListener((o, a, v) -> prefs.putBoolean(SOLO_STEREO, v));
+		st.soloTrim.addListener((o, a, v) -> prefs.putDouble(SOLO_TRIM, v.doubleValue()));
 		st.frac.addListener((o, a, v) -> prefs.putInt(FRAC, v.intValue()));
 		st.smoothing.addListener((o, a, v) -> prefs.putDouble(SMOOTHING, v.doubleValue()));
 		st.avgN.addListener((o, a, v) -> prefs.putInt(AVG_N, v.intValue()));

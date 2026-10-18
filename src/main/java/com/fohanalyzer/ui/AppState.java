@@ -56,6 +56,15 @@ public final class AppState
 	 * measurement mic is not, so this is deliberately solo-only.
 	 */
 	public final BooleanProperty soloStereo = new SimpleBooleanProperty(false);
+	/**
+	 * dB added to the solo trace after analysis, so it can be compared with the
+	 * mic by eye and the transfer curve's 0 dB line means something. The mic
+	 * and solo bus arrive at whatever level the console gives them, often 10–20
+	 * dB apart.
+	 */
+	public final DoubleProperty soloTrim = new SimpleDoubleProperty(0);
+	/** Furthest the solo trim goes either way. */
+	public static final double SOLO_TRIM_MAX = 60;
 
 	// Ring-out / reference / overlays
 	public final ObjectProperty<Ring> ring = new SimpleObjectProperty<>(Ring.INACTIVE);
@@ -66,7 +75,7 @@ public final class AppState
 	public final ObjectProperty<Double> locateFreq = new SimpleObjectProperty<>(null);
 
 	// Readouts / SPL
-	public final ObjectProperty<Stats> stats = new SimpleObjectProperty<>(new Stats(0, -90, -90, -90, -90, null));
+	public final ObjectProperty<Stats> stats = new SimpleObjectProperty<>(new Stats(0, -90, -90, -90, -90, 0, null));
 	public final DoubleProperty splOffset = new SimpleDoubleProperty(0);
 	public final DoubleProperty calRefSpl = new SimpleDoubleProperty(94);
 	/**

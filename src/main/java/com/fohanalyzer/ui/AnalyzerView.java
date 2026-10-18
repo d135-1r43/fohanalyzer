@@ -120,6 +120,7 @@ public final class AnalyzerView extends Region
 		Voice mvc = liveMic != null ? Voice.NEUTRAL : state.micVoice();
 		Voice svc = liveSolo != null ? Voice.NEUTRAL : state.soloVoice();
 
+		sig.setSoloTrim(state.soloTrim.get());
 		sig.update(liveMic != null ? liveMic : sim.mic(),
 			liveSolo != null ? liveSolo : sim.solo(),
 			mvc, svc, centers, state.smoothing.get(), state.avgN.get());
@@ -139,7 +140,7 @@ public final class AnalyzerView extends Region
 			if (captureNonce > 0)
 			{
 				state.reference.set(new Draw.Reference(
-					centers.clone(), sig.dispMic.clone(), sig.dispSolo.clone(),
+					centers.clone(), sig.dispMic.clone(), sig.trimSolo.clone(),
 					java.time.LocalTime.now().toString().substring(0, 5)));
 				state.showReference.set(true);
 			}
@@ -165,16 +166,16 @@ public final class AnalyzerView extends Region
 		g.rect(Draw.PAD_L, Draw.PAD_T, plotW, plotH);
 		g.clip();
 
-		if (soloOn) Draw.drawBars(g, sig.dispSolo, xs, barW, plotH, baseY, 245, 165, 36, aT, aB);
+		if (soloOn) Draw.drawBars(g, sig.trimSolo, xs, barW, plotH, baseY, 245, 165, 36, aT, aB);
 		if (micOn) Draw.drawBars(g, sig.dispMic, xs, barW, plotH, baseY, 34, 211, 238, aT, aB);
 		if (state.peakHold.get())
 		{
-			if (soloOn) Draw.drawHoldTicks(g, sig.holdSolo, xs, barW, plotH, Color.rgb(245, 165, 36, 0.85));
+			if (soloOn) Draw.drawHoldTicks(g, sig.trimHoldSolo, xs, barW, plotH, Color.rgb(245, 165, 36, 0.85));
 			if (micOn) Draw.drawHoldTicks(g, sig.holdMic, xs, barW, plotH, Color.rgb(34, 211, 238, 0.9));
 		}
 		Draw.Reference ref = state.reference.get();
 		if (ref != null && state.showReference.get()) Draw.drawReference(g, ref, plotW, plotH, micOn, soloOn);
-		if (tfShown) Draw.drawTransferCurve(g, centers, sig.dispMic, sig.dispSolo, width, plotW, plotH);
+		if (tfShown) Draw.drawTransferCurve(g, centers, sig.dispMic, sig.trimSolo, width, plotW, plotH);
 
 		g.restore();
 
@@ -182,7 +183,7 @@ public final class AnalyzerView extends Region
 		if (state.markers.get())
 		{
 			boolean solo = "solo".equals(state.markerSource.get());
-			float[] src = solo ? sig.dispSolo : sig.dispMic;
+			float[] src = solo ? sig.trimSolo : sig.dispMic;
 			boolean on = solo ? soloOn : micOn;
 			Color col = solo ? Color.web("#f5a524") : Color.web("#22d3ee");
 			if (on) Draw.drawPeakMarkers(g, src, centers, plotW, plotH, width, col);
@@ -192,7 +193,7 @@ public final class AnalyzerView extends Region
 		if (mouseInside)
 		{
 			Draw.drawHoverTooltip(g, new Draw.Mouse(mouseX, mouseY, true), centers, xs,
-				sig.dispMic, sig.dispSolo, width, plotW, plotH, micOn, soloOn);
+				sig.dispMic, sig.trimSolo, state.soloTrim.get(), width, plotW, plotH, micOn, soloOn);
 		}
 		Draw.drawZoneStrip(g, plotW, plotH, width, height);
 	}

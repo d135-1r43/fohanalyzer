@@ -53,6 +53,7 @@ class SettingsTest
 		first.markerSource.set("solo");
 		first.showTransfer.set(true);
 		first.showSpl.set(true);
+		first.soloTrim.set(-12.5);
 
 		AppState next = new AppState();
 		new Settings(node).bind(next);
@@ -67,6 +68,18 @@ class SettingsTest
 		assertEquals("solo", next.markerSource.get());
 		assertTrue(next.showTransfer.get());
 		assertTrue(next.showSpl.get());
+		assertEquals(-12.5, next.soloTrim.get(), 1e-9);
+	}
+
+	@Test
+	void aSoloTrimOutsideTheControlsRangeFallsBackToNone()
+	{
+		node.putDouble("soloTrim", 500);
+
+		AppState st = new AppState();
+		settings.bind(st);
+
+		assertEquals(0, st.soloTrim.get(), 1e-9);
 	}
 
 	@Nested
@@ -267,6 +280,7 @@ class SettingsTest
 		st.splOffset.set(99);
 		st.frac.set(1);
 		st.markerSource.set("solo");
+		st.soloTrim.set(9);
 
 		settings.reset(st);
 
@@ -274,6 +288,7 @@ class SettingsTest
 		assertEquals(defaults.splOffset.get(), st.splOffset.get(), 1e-9);
 		assertEquals(defaults.frac.get(), st.frac.get());
 		assertEquals(defaults.markerSource.get(), st.markerSource.get());
+		assertEquals(defaults.soloTrim.get(), st.soloTrim.get(), 1e-9);
 		// Applying the defaults fires the persist listeners, so this also pins
 		// down that the store is wiped afterwards rather than left holding
 		// explicit copies of the defaults.

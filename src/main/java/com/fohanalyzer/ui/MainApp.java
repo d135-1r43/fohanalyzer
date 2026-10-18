@@ -6,6 +6,7 @@ import com.fohanalyzer.audio.AudioInputs;
 import com.fohanalyzer.audio.AudioSource;
 import com.fohanalyzer.dsp.Stats;
 import com.fohanalyzer.ui.controls.Logo;
+import com.fohanalyzer.ui.controls.Trim;
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -165,10 +166,19 @@ public class MainApp extends Application
 		micVal = new Label("-90");
 		soloVal = new Label("-90");
 		splVal = new Label("—");
+		// A trimmed solo trace is labelled with its trim, so nobody reads the
+		// offset level as the bus's own.
+		Label soloLbl = new Label();
+		Runnable soloTrimLbl = () -> {
+			double t = state.soloTrim.get();
+			soloLbl.setText(t != 0 ? "SOLO " + Trim.fmtDb(t) : "SOLO");
+		};
+		state.soloTrim.addListener((o, a, b) -> soloTrimLbl.run());
+		soloTrimLbl.run();
 		HBox readouts = new HBox(10,
 			readoutChip("PEAK", peakVal, "#e9fb9b"),
 			readoutChip("MIC", micVal, "#22d3ee"),
-			readoutChip("SOLO", soloVal, "#f5a524"));
+			readoutChip(soloLbl, soloVal, "#f5a524"));
 		Label splLbl = new Label("SPL");
 		splChip = readoutChip(splLbl, splVal, "#a3e635");
 		readouts.getChildren().add(splChip);

@@ -15,6 +15,9 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyCodeCombination;
+import javafx.scene.input.KeyCombination;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
@@ -59,12 +62,17 @@ public class MainApp extends Application
 		root.getStyleClass().add("root");
 		root.setTop(buildHeader());
 		root.setCenter(analyzer);
-		root.setRight(new ControlRail(state, settings));
+		ControlRail rail = new ControlRail(state, settings);
+		root.setRight(rail);
 
 		Scene scene = new Scene(root, 1366, 820, Color.web("#070a0f"));
 		scene.getStylesheets().add(getClass().getResource("/com/fohanalyzer/theme.css").toExternalForm());
 		// no-op unless FOH_DEV=true
 		com.fohanalyzer.dev.CssWatcher.installIfEnabled(scene);
+		// The platform's preferences shortcut: Cmd+, on macOS, Ctrl+,
+		// elsewhere.
+		scene.getAccelerators().put(
+			new KeyCodeCombination(KeyCode.COMMA, KeyCombination.SHORTCUT_DOWN), rail::showPreferences);
 		stage.setTitle("FOHanalyzer");
 		stage.setScene(scene);
 		stage.centerOnScreen();

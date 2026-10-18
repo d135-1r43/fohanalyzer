@@ -474,7 +474,7 @@ public final class ControlRail extends ScrollPane
 		Button prefs = new Button("⚙  Preferences…");
 		prefs.getStyleClass().addAll("btn", "btn-prefs");
 		prefs.setMaxWidth(Double.MAX_VALUE);
-		prefs.setOnAction(e -> preferences.show(getScene() != null ? getScene().getWindow() : null));
+		prefs.setOnAction(e -> showPreferences());
 
 		Button resetAll = miniBtn("Reset saved settings", e -> confirmReset());
 		VBox box = new VBox(10, prefs, f, resetAll);
@@ -482,6 +482,12 @@ public final class ControlRail extends ScrollPane
 		VBox.setVgrow(box, Priority.ALWAYS);
 		box.setStyle("-fx-padding:16 0 14 0;");
 		return box;
+	}
+
+	/** Opens the preferences window over this rail's window. */
+	public void showPreferences()
+	{
+		preferences.show(getScene() != null ? getScene().getWindow() : null);
 	}
 
 	/**

@@ -113,13 +113,14 @@ public final class ControlRail extends ScrollPane
 		// window; what stays here is the reading itself.
 		VBox sec = section("SPL Meter", display);
 
-		// visible only when the mic source is live
+		// visible only when the mic source is live and the meter is wanted
 		Runnable vis = () -> {
-			boolean live = state.isMicLive();
-			sec.setVisible(live);
-			sec.setManaged(live);
+			boolean show = state.isMicLive() && state.showSpl.get();
+			sec.setVisible(show);
+			sec.setManaged(show);
 		};
 		state.micChan.addListener((o, a, b) -> vis.run());
+		state.showSpl.addListener((o, a, b) -> vis.run());
 		state.splOffset.addListener((o, a, b) -> updateSplBadge());
 		vis.run();
 		updateSplBadge();

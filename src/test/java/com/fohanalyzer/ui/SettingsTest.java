@@ -52,6 +52,7 @@ class SettingsTest
 		first.markers.set(false);
 		first.markerSource.set("solo");
 		first.showTransfer.set(true);
+		first.showSpl.set(true);
 
 		AppState next = new AppState();
 		new Settings(node).bind(next);
@@ -65,6 +66,60 @@ class SettingsTest
 		assertFalse(next.markers.get());
 		assertEquals("solo", next.markerSource.get());
 		assertTrue(next.showTransfer.get());
+		assertTrue(next.showSpl.get());
+	}
+
+	@Nested
+	class SplMeterVisibility
+	{
+		@Test
+		void hiddenOnAFirstRun()
+		{
+			AppState st = new AppState();
+			settings.bind(st);
+
+			assertFalse(st.showSpl.get(), "without a calibration the readout is only dBFS");
+		}
+
+		@Test
+		void aCalibrationFromBeforeTheSettingExistedKeepsTheMeterShown()
+		{
+			// Written by a build without the toggle: calibrated, no showSpl
+			// key.
+			node.putDouble("splOffset", 112.5);
+
+			AppState st = new AppState();
+			settings.bind(st);
+
+			assertTrue(st.showSpl.get(), "an update should not hide a meter someone calibrated");
+		}
+
+		@Test
+		void hidingItIsRememberedEvenWhenCalibrated()
+		{
+			AppState first = new AppState();
+			settings.bind(first);
+			first.splOffset.set(112.5);
+			first.showSpl.set(true);
+			first.showSpl.set(false);
+
+			AppState next = new AppState();
+			new Settings(node).bind(next);
+
+			assertFalse(next.showSpl.get());
+		}
+
+		@Test
+		void resetHidesItAgain()
+		{
+			AppState st = new AppState();
+			settings.bind(st);
+			st.showSpl.set(true);
+
+			settings.reset(st);
+
+			assertFalse(st.showSpl.get());
+		}
 	}
 
 	@Test

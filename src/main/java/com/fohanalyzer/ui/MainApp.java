@@ -169,7 +169,8 @@ public class MainApp extends Application
 			readoutChip("PEAK", peakVal, "#e9fb9b"),
 			readoutChip("MIC", micVal, "#22d3ee"),
 			readoutChip("SOLO", soloVal, "#f5a524"));
-		splChip = readoutChip("SPL", splVal, "#a3e635");
+		Label splLbl = new Label("SPL");
+		splChip = readoutChip(splLbl, splVal, "#a3e635");
 		readouts.getChildren().add(splChip);
 		readouts.setAlignment(Pos.CENTER_LEFT);
 		HBox.setHgrow(readouts, Priority.ALWAYS);
@@ -185,12 +186,17 @@ public class MainApp extends Application
 		HBox status = new HBox(10, led, liveTxt, sep(), rate, sep(), clockLabel);
 		status.setAlignment(Pos.CENTER_LEFT);
 
-		// SPL chip visibility follows the mic-live state
+		// SPL chip needs a live mic and the user's say-so. Shown uncalibrated,
+		// it is labelled for what it reads rather than passed off as SPL.
 		Runnable splVis = () -> {
-			splChip.setVisible(state.isMicLive());
-			splChip.setManaged(state.isMicLive());
+			boolean show = state.isMicLive() && state.showSpl.get();
+			splChip.setVisible(show);
+			splChip.setManaged(show);
+			splLbl.setText(state.splOffset.get() != 0 ? "SPL" : "dBFS");
 		};
 		state.micChan.addListener((o, a, b) -> splVis.run());
+		state.showSpl.addListener((o, a, b) -> splVis.run());
+		state.splOffset.addListener((o, a, b) -> splVis.run());
 		splVis.run();
 
 		HBox header = new HBox(24, brand, readouts, status);
@@ -205,7 +211,11 @@ public class MainApp extends Application
 
 	private HBox readoutChip(String label, Label valueLabel, String color)
 	{
-		Label l = new Label(label);
+		return readoutChip(new Label(label), valueLabel, color);
+	}
+
+	private HBox readoutChip(Label l, Label valueLabel, String color)
+	{
 		l.getStyleClass().add("ro-lbl");
 		valueLabel.getStyleClass().add("ro-val");
 		valueLabel.setStyle("-fx-text-fill:" + color + ";");

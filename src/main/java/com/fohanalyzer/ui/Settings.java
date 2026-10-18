@@ -27,6 +27,7 @@ public final class Settings
 
 	private static final String SPL_OFFSET = "splOffset";
 	private static final String CAL_REF_SPL = "calRefSpl";
+	private static final String SHOW_SPL = "showSpl";
 	private static final String MIC_CHAN = "micChan";
 	private static final String SOLO_CHAN = "soloChan";
 	private static final String MIC_CHAN_IDX = "micChanIdx";
@@ -111,6 +112,7 @@ public final class Settings
 		AppState d = new AppState();
 		state.splOffset.set(d.splOffset.get());
 		state.calRefSpl.set(d.calRefSpl.get());
+		state.showSpl.set(d.showSpl.get());
 		state.frac.set(d.frac.get());
 		state.smoothing.set(d.smoothing.get());
 		state.avgN.set(d.avgN.get());
@@ -196,6 +198,10 @@ public final class Settings
 			st.calRefSpl.get()));
 		st.smoothing.set(clamp(prefs.getDouble(SMOOTHING, st.smoothing.get()), 0, 0.95,
 			st.smoothing.get()));
+		// A store from before this setting existed has no entry for it; keep
+		// the meter of whoever had already calibrated rather than hiding it on
+		// them after an update.
+		st.showSpl.set(prefs.getBoolean(SHOW_SPL, st.showSpl.get() || st.splOffset.get() != 0));
 
 		int frac = prefs.getInt(FRAC, st.frac.get());
 		if (FRACTIONS.contains(frac)) st.frac.set(frac);
@@ -280,5 +286,6 @@ public final class Settings
 		st.markers.addListener((o, a, v) -> prefs.putBoolean(MARKERS, v));
 		st.markerSource.addListener((o, a, v) -> prefs.put(MARKER_SOURCE, v));
 		st.showTransfer.addListener((o, a, v) -> prefs.putBoolean(SHOW_TRANSFER, v));
+		st.showSpl.addListener((o, a, v) -> prefs.putBoolean(SHOW_SPL, v));
 	}
 }

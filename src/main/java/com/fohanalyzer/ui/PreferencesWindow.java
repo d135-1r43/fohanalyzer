@@ -1,6 +1,7 @@
 package com.fohanalyzer.ui;
 
 import com.fohanalyzer.ui.controls.ChannelSelect;
+import com.fohanalyzer.ui.controls.Toggle;
 import javafx.application.Platform;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -228,7 +229,16 @@ public final class PreferencesWindow
 			+ " simulated preset has no real level to calibrate against.");
 		needsLive.getStyleClass().add("prefs-notice");
 
-		VBox sec = section("SPL meter", needsLive, calRow, howTo, status);
+		// Not tied to a live mic like the calibration row: hiding the meter is
+		// a preference, and it should be reachable before the rig is patched.
+		Label showLbl = new Label("Show in main window");
+		showLbl.getStyleClass().add("ctl-lbl");
+		Region sp = new Region();
+		HBox.setHgrow(sp, Priority.ALWAYS);
+		HBox showRow = new HBox(showLbl, sp, new Toggle(state.showSpl, "#a3e635"));
+		showRow.setAlignment(Pos.CENTER_LEFT);
+
+		VBox sec = section("SPL meter", showRow, needsLive, calRow, howTo, status);
 
 		// Only a live mic produces the RMS the calibration is computed from.
 		// Just the controls are disabled: the notice and the status stay
@@ -248,7 +258,10 @@ public final class PreferencesWindow
 	private void calibrate()
 	{
 		Double rms = state.stats.get().micRmsDbfs();
-		if (rms != null) state.splOffset.set(state.calRefSpl.get() - rms);
+		if (rms == null) return;
+		state.splOffset.set(state.calRefSpl.get() - rms);
+		// Whoever calibrates wants to read the result.
+		state.showSpl.set(true);
 	}
 
 	/**

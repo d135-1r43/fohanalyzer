@@ -38,7 +38,7 @@
     <tarsosdsp.version>2.5</tarsosdsp.version>
     <slf4j.version>2.0.20</slf4j.version>
     <mcp.version>2.0.1</mcp.version>
-    <jetty.version>12.1.13</jetty.version>
+    <jetty.version>12.1.14</jetty.version>
     <formatter.plugin.version>2.29.0</formatter.plugin.version>
     <release.plugin.version>3.3.1</release.plugin.version>
     <toolchains.plugin.version>3.3.0</toolchains.plugin.version>

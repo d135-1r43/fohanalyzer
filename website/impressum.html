@@ -3,6 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- GitHub Pages cannot send response headers, so the policy is delivered here. A
+     <meta> CSP ignores frame-ancestors, which is why that directive is absent. Must stay
+     identical on every page; tools/csp-hash.py checks it. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://plausible.herhoffer.net 'sha256-S46PoNSIlqlHWn5jWqs3zz9yXx6Zq5efyOQb01rgaLs='; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src https://plausible.herhoffer.net; form-action 'none'; base-uri 'self'; object-src 'none'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
 
 <title>Impressum — FOHanalyzer</title>
 <meta name="description" content="Impressum und Anbieterkennzeichnung nach § 5 DDG und § 18 Abs. 2 MStV für fohanalyzer.com.">
@@ -39,7 +44,7 @@
 <script src="assets/js/components.js" defer></script>
 
 <!-- Privacy-friendly analytics: self-hosted Plausible, no cookies, no personal data.
-     The inline half is allow-listed in nginx.conf by SHA-256 hash, so it has to stay
+     The inline half is allow-listed in the CSP <meta> above by SHA-256 hash, so it has to stay
      byte-identical on every page. Re-run tools/csp-hash.py after touching it. -->
 <script async src="https://plausible.herhoffer.net/js/pa-y3gCzXvtaF6PA8rX-mQi9.js"></script>
 <script>
@@ -194,9 +199,9 @@
 			<h2>Datenschutz</h2>
 			<p>
 				Diese Website setzt <strong>keine Cookies</strong>. Es gibt keine Formulare, keine
-				Registrierung und keine Newsletter. Alle Schriftarten, Bilder und Stylesheets werden vom
-				selben Server ausgeliefert; es findet keine Verbindung zu einem Content-Delivery-Netzwerk
-				und zu keinem Werbe- oder Social-Media-Dienst statt.
+				Registrierung und keine Newsletter. Alle Schriftarten, Bilder und Stylesheets werden
+				zusammen mit den Seiten ausgeliefert; es werden keine Inhalte von Schriftarten-, Werbe-
+				oder Social-Media-Diensten nachgeladen.
 			</p>
 			<p>
 				Zur Reichweitenmessung wird <strong>Plausible Analytics</strong> eingesetzt, eine freie
@@ -219,14 +224,17 @@
 				beiden Fällen ohne Einschränkung weiter.
 			</p>
 			<p>
-				Beim Abruf der Seiten schreibt der Webserver technisch notwendige Zugriffsprotokolle
-				(angefragte Adresse, Zeitpunkt, Statuscode, übertragene Datenmenge, Referrer und
-				Browserkennung). Die IP-Adresse wird dabei <strong>vor dem Speichern gekürzt</strong>: Bei
-				IPv4 wird das letzte Oktett, bei IPv6 werden die hinteren Segmente auf Null gesetzt. Ein
-				Personenbezug wird dadurch nicht hergestellt. Die Protokolle dienen ausschließlich dem
-				sicheren Betrieb des Servers. Rechtsgrundlage für die Verarbeitung während der Auslieferung
-				ist Art. 6 Abs. 1 lit. f DSGVO; das berechtigte Interesse liegt im technisch fehlerfreien
-				Betrieb des Angebots.
+				Die Website wird über <strong>GitHub Pages</strong> bereitgestellt, einen Dienst der
+				GitHub, Inc., 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, USA. Beim Abruf der
+				Seiten verarbeitet GitHub technisch notwendige Verbindungsdaten (insbesondere die
+				IP-Adresse, angefragte Adresse, Zeitpunkt, Referrer und Browserkennung) und speichert die
+				IP-Adresse nach eigenen Angaben zu Sicherheitszwecken. Die Auslieferung kann dabei über
+				Server außerhalb der EU erfolgen, insbesondere in den USA; GitHub stützt die Übermittlung
+				auf das EU-US Data Privacy Framework sowie auf Standardvertragsklauseln. Auf diese
+				Protokolle hat der Anbieter dieser Website keinen Zugriff. Rechtsgrundlage ist Art. 6
+				Abs. 1 lit. f DSGVO; das berechtigte Interesse liegt in einer sicheren und zuverlässigen
+				Auslieferung des Angebots. Näheres regelt die
+				<a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement">Datenschutzerklärung von GitHub</a>.
 			</p>
 			<p>
 				Die Anwendung FOHanalyzer selbst verarbeitet Audiodaten ausschließlich lokal auf dem Gerät,
@@ -289,7 +297,7 @@
 					<li><a href="contribute.html">Contribute</a></li>
 					<li><a href="https://github.com/d135-1r43/fohanalyzer">Source code</a></li>
 					<li><a href="https://github.com/d135-1r43/fohanalyzer/issues">Issue tracker</a></li>
-					<li><a href="https://github.com/d135-1r43/fohanalyzer-website">Website source</a></li>
+					<li><a href="https://github.com/d135-1r43/fohanalyzer/tree/master/website">Website source</a></li>
 				</ul>
 			</nav>
 

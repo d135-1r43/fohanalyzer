@@ -7,6 +7,11 @@ name: Build
 on:
   push:
     branches: [master]
+    # The website has its own workflow (pages.yml); a site-only change needs no app build.
+    # Path filters do not apply to tag pushes, so releases are unaffected.
+    paths-ignore:
+      - 'website/**'
+      - '.github/workflows/pages.yml'
     # Both the maven-release-plugin default tag format (artifactId-version) and the
     # v-prefixed one, so either release configuration triggers a release build.
     tags:
@@ -14,6 +19,9 @@ on:
       - 'fohanalyzer-java-[0-9]+.[0-9]+.[0-9]+'
   pull_request:
     branches: [master]
+    paths-ignore:
+      - 'website/**'
+      - '.github/workflows/pages.yml'
   workflow_dispatch:
 
 permissions:

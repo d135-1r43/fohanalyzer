@@ -12,7 +12,7 @@
 
 ## What this is
 
-Three pages and a 404, served by nginx out of a container. There is no bundler, no
+Three pages and a 404, served by GitHub Pages from this directory of the application repository. There is no bundler, no
 transpiler and no `package.json` — what is in this repository is byte-for-byte what is
 served. Editing a file and reloading the browser is the whole development loop.
 
@@ -23,14 +23,11 @@ dependencies and no config file of its own.
 index.html          the product, the open-source case, the contribution pitch
 contribute.html     the contributor guide
 impressum.html      the German legal notice (§ 5 DDG, § 18 Abs. 2 MStV)
-404.html            served by nginx for anything else
+404.html            served by GitHub Pages for anything else
 assets/css/         tokens · base · components
 assets/js/          three custom elements, no dependencies
 assets/fonts/       Barlow + IBM Plex Mono, subset to WOFF2
 assets/img/         logo and screenshots, taken from the app repository
-nginx.conf          server block: headers, caching, routing
-Dockerfile          static files on nginx-unprivileged
-docker-compose.yml  deployment behind Nginx Proxy Manager
 tools/make-og.py    regenerates the link-preview card
 tools/csp-hash.py   re-hashes the inline analytics snippet for the CSP
 ```
@@ -44,73 +41,25 @@ python3 -m http.server 8099
 # http://127.0.0.1:8099
 ```
 
-That covers everything except the parts `nginx.conf` provides — the security headers,
-the cache policy, extensionless URLs (`/contribute`) and the 404 page. To exercise those,
-run the real image:
-
-```bash
-docker build -t fohanalyzer-site .
-docker run --rm -p 8080:8080 fohanalyzer-site
-# http://localhost:8080
-```
-
-The image is based on `nginx-unprivileged`, so it runs as UID 101 and listens on **8080**,
-not 80. Whatever terminates TLS in front of it should proxy to that port. `/healthz`
-returns `ok` for load balancers and the container health check.
+GitHub Pages also resolves extensionless URLs (`/contribute` → `contribute.html`) and serves
+`404.html` for unknown paths; a plain local server does neither.
 
 ## Deploying
 
-CI builds the image on every push and publishes it to the GitHub Container Registry:
+`.github/workflows/pages.yml` in the repository root publishes this directory to GitHub
+Pages on every push to `master` that touches `website/`. Pull requests run the same checks
+without deploying.
 
-| Trigger | Tags |
-|---|---|
-| push to `main` | `:main`, `:sha-<commit>`, `:latest` |
-| tag `v1.2.3` | `:1.2.3`, `:1.2`, `:1`, `:latest` |
-| pull request | built and smoke-tested, not pushed |
+Every run checks the inline-script CSP hash is current and that the Impressum is still
+published with its address block, then uploads the pages, `assets/`, `robots.txt` and
+`sitemap.xml`. This README and `tools/` are not published.
 
-Every run validates `nginx.conf` with `nginx -t`, checks the inline-script CSP hash is
-current, boots the built image, and checks that the pages, the assets, the extensionless
-URL, the 404 and the CSP header all come back correctly before anything is published.
-
-```bash
-docker pull ghcr.io/d135-1r43/fohanalyzer-website:latest
-```
-
-### Behind Nginx Proxy Manager
-
-`docker-compose.yml` joins the container to the **external** `nginx-proxy-manager`
-network, which the NPM stack owns and this one only attaches to:
-
-```bash
-docker compose pull && docker compose up -d
-```
-
-Then add a proxy host in NPM pointing at the container:
-
-| Field | Value |
-|---|---|
-| Forward Hostname / IP | `fohanalyzer-website` |
-| Forward Port | `8080` |
-| Scheme | `http` |
-
-There is deliberately **no `ports:` mapping**. NPM reaches the container over the
-shared network, so publishing a host port would add a second, unproxied way in
-that bypasses the TLS and access rules configured in NPM. For the same division
-of labour, `nginx.conf` sets no HSTS header — certificates and HSTS belong to
-the proxy, and an HSTS header sent from behind it would be a promise this
-container cannot keep.
-
-`FOH_TAG` pins a version if you would rather not track `latest`:
-
-```bash
-FOH_TAG=sha-338056e docker compose up -d
-```
-
-The container runs with a read-only root filesystem, every capability dropped
-and `no-new-privileges`, with tmpfs on the three paths nginx writes to. That is
-not an aspiration: CI brings this exact compose file up against each build,
-requests the pages from another container by name over the shared network, and
-asserts the read-only and capability settings actually took.
+GitHub Pages cannot set response headers, so the security policy lives in a
+`<meta http-equiv="Content-Security-Policy">` in every page's `<head>`, identical on all
+four. A `<meta>` CSP cannot express `frame-ancestors`, and `X-Frame-Options`,
+`X-Content-Type-Options` and `Permissions-Policy` have no `<meta>` form at all, so those are
+not sent. The referrer policy is set with `<meta name="referrer">`. GitHub Pages caches
+everything for ten minutes, so a deploy is live for everyone shortly after it lands.
 
 ## How the CSS is organised
 
@@ -139,14 +88,14 @@ inherit.
 ```
 
 The accent classes (`.acc-cyan`, `.acc-lime`, …) exist so that **no page contains an inline
-`style` attribute**, which is what lets `nginx.conf` ship `style-src 'self'` with no
+`style` attribute**, which is what lets the CSP ship `style-src 'self'` with no
 `'unsafe-inline'`. If you add an inline style, it will silently stop being applied in
 production — add a class instead.
 
-Browsers keep everything under `/assets/` for a week, and the filenames are not
-content-hashed. So when a stylesheet changes, bump the `?v=` on its `<link>` in all four
-pages. If you don't, returning visitors keep the old CSS against the new HTML for up to
-seven days.
+The asset filenames are not content-hashed, so when a stylesheet changes, bump the `?v=` on
+its `<link>` in all four pages. GitHub Pages only caches for ten minutes, but a returning
+visitor whose browser is mid-revalidation can otherwise briefly pair the old CSS with the
+new HTML.
 
 ## The JavaScript
 
@@ -183,11 +132,11 @@ kills tracking on every page** — the pages still render, nothing errors visibl
 change to it:
 
 ```bash
-tools/csp-hash.py   # verifies all four pages match, prints the new sha256-… for nginx.conf
+tools/csp-hash.py   # verifies all four pages match, prints the new sha256-… for the CSP <meta>
 ```
 
 Removing analytics again means deleting the snippet from the four pages and putting
-`script-src 'self'; … connect-src 'none'` back in `nginx.conf` — plus the `Datenschutz`
+`script-src 'self'; … connect-src 'none'` back in the CSP `<meta>` of all four pages — plus the `Datenschutz`
 section of `impressum.html` and the footer line, which both describe what is running.
 
 ## Fonts
@@ -246,8 +195,8 @@ is a smaller cost than adding a toolchain. **If you change the nav or the footer
 
 That is now four copies, which was the point at which this trade was going to stop being
 worth it. It still just about holds, because the footer changes rarely. A fifth page should
-come with a decision instead: either nginx SSI (`ssi on` plus an include, no build step, but
-it breaks opening the files from disk) or accepting a static site generator.
+come with a decision instead: most likely accepting a static site generator, which GitHub
+Pages can run in the workflow.
 
 `404.html` uses root-absolute asset paths (`/assets/…`) because it is served at whatever URL
 was requested; the other pages use relative paths so they also work opened straight from
@@ -259,12 +208,8 @@ disk.
 the responsible-person entry (§ 18 Abs. 2 MStV). It is written in German because that is the
 language the obligation is owed in.
 
-It also carries the data-protection statement, and one clause there is a claim the server has
-to keep: **IP addresses are truncated before they are written to the access log.** That is
-implemented by the `map $remote_addr $remote_addr_anon` block at the top of `nginx.conf`, and
-CI asserts it by making a request and checking the log shows `172.17.0.0` rather than
-`172.17.0.1`. Change one and you must change the other — the CI check exists so that you
-cannot quietly change only the config.
+It also carries the data-protection statement, which names GitHub Pages as the host. If the
+hosting moves again, that paragraph has to move with it.
 
 ## Licence
 

@@ -1,0 +1,72 @@
+name: Website
+
+# Publishes website/ to GitHub Pages. The site is static HTML with no build step, so the
+# job only checks it and copies the served files into the Pages artifact. Pull requests
+# run the checks without deploying.
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'website/**'
+      - '.github/workflows/pages.yml'
+  pull_request:
+    branches: [master]
+    paths:
+      - 'website/**'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# One deployment at a time; a newer push supersedes a queued one but never cancels a
+# deployment already in progress.
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # The CSP allow-lists the inline analytics snippet by hash, and a stale hash fails
+      # silently: the pages render, nothing errors, and no visit is ever counted.
+      - name: Check the inline-script CSP hash is current
+        run: python3 website/tools/csp-hash.py
+
+      # Only what a browser should fetch: the pages, assets, robots and sitemap. The
+      # README, the tools and the git metadata files stay in the repository.
+      - name: Assemble the site
+        run: |
+          mkdir _site
+          cp website/*.html website/robots.txt website/sitemap.xml _site/
+          cp -r website/assets _site/
+          # The Impressum is legally required to stay reachable — fail loudly if it ever
+          # stops being published or loses its address block.
+          grep -q "Scheyerer" _site/impressum.html
+          test -f _site/404.html
+
+      - uses: actions/configure-pages@v5
+        if: github.event_name != 'pull_request'
+
+      - uses: actions/upload-pages-artifact@v4
+        if: github.event_name != 'pull_request'
+        with:
+          path: _site
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

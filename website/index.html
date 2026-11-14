@@ -1,0 +1,746 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>FOHanalyzer — an open-source dual-channel RTA for front-of-house</title>
+<meta name="description" content="A native desktop dual-channel RTA for front-of-house sound engineers. Overlay a measurement mic against the console solo bus: read the room, hunt feedback, verify EQ, meter SPL. Free software under GPL-3.0.">
+
+<link rel="canonical" href="https://fohanalyzer.com/">
+<link rel="icon" href="assets/img/logo.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="assets/img/logo.png">
+<meta name="theme-color" content="#070a0f">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="FOHanalyzer">
+<meta property="og:locale" content="en_GB">
+<meta property="og:url" content="https://fohanalyzer.com/">
+<meta property="og:title" content="FOHanalyzer — an open-source dual-channel RTA for front-of-house">
+<meta property="og:description" content="Overlay a measurement mic against the console solo bus: read the room, hunt feedback, verify EQ, meter real SPL. Free software under GPL-3.0, with no account and no telemetry.">
+<meta property="og:image" content="https://fohanalyzer.com/assets/img/og.png">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="The FOHanalyzer wordmark over the headline “Read the room. Hunt the ring.”, beside a spectrum-analyser bar display in cyan, lime and amber.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="FOHanalyzer — an open-source dual-channel RTA for front-of-house">
+<meta name="twitter:description" content="Overlay a measurement mic against the console solo bus: read the room, hunt feedback, verify EQ, meter real SPL. Free software under GPL-3.0, with no account and no telemetry.">
+<meta name="twitter:image" content="https://fohanalyzer.com/assets/img/og.png">
+<meta name="twitter:image:alt" content="The FOHanalyzer wordmark over the headline “Read the room. Hunt the ring.”, beside a spectrum-analyser bar display in cyan, lime and amber.">
+
+<!-- Preload the two faces used above the fold; the bold cuts load normally. -->
+<link rel="preload" href="assets/fonts/Barlow-Regular.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/IBMPlexMono-Bold.woff2" as="font" type="font/woff2" crossorigin>
+
+<link rel="stylesheet" href="assets/css/tokens.css">
+<link rel="stylesheet" href="assets/css/base.css?v=2">
+<link rel="stylesheet" href="assets/css/components.css">
+<script src="assets/js/components.js" defer></script>
+
+<!-- Privacy-friendly analytics: self-hosted Plausible, no cookies, no personal data.
+     The inline half is allow-listed in nginx.conf by SHA-256 hash, so it has to stay
+     byte-identical on every page. Re-run tools/csp-hash.py after touching it. -->
+<script async src="https://plausible.herhoffer.net/js/pa-y3gCzXvtaF6PA8rX-mQi9.js"></script>
+<script>
+  window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
+  plausible.init()
+</script>
+</head>
+
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<!-- ===================== header ===================== -->
+<header class="site-header">
+	<div class="container site-header__inner">
+		<a class="brand" href="./">
+			<img src="assets/img/logo.svg" width="34" height="34" alt="">
+			<span class="brand__marks">
+				<span class="brand__name">FOHanalyzer</span>
+				<span class="brand__sub">Dual Spectrum · RTA</span>
+			</span>
+		</a>
+
+		<nav class="nav" aria-label="Primary">
+			<ul class="nav__list">
+				<li><a class="nav__link" href="#features">Features</a></li>
+				<li><a class="nav__link" href="#open-source">Open source</a></li>
+				<li><a class="nav__link" href="#internals">How it works</a></li>
+				<li><a class="nav__link" href="contribute.html">Contribute</a></li>
+			</ul>
+			<a class="btn btn--mini btn--lime" href="https://github.com/d135-1r43/fohanalyzer">
+				<svg class="btn__icon" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor" stroke="none">
+					<path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.11.79-.25.79-.56v-2c-3.2.7-3.88-1.54-3.88-1.54-.53-1.34-1.29-1.7-1.29-1.7-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.71 1.26 3.37.96.1-.75.4-1.26.73-1.55-2.56-.29-5.25-1.28-5.25-5.7 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11 11 0 0 1 5.79 0c2.21-1.49 3.18-1.18 3.18-1.18.63 1.59.23 2.76.11 3.05.74.81 1.18 1.84 1.18 3.1 0 4.43-2.69 5.4-5.26 5.69.41.36.78 1.06.78 2.14v3.17c0 .31.21.68.8.56A11.5 11.5 0 0 0 12 .5Z"/>
+				</svg>
+				GitHub
+			</a>
+		</nav>
+	</div>
+</header>
+
+<main id="main">
+
+<!-- ===================== hero ===================== -->
+<section class="hero">
+	<div class="hero__glow" aria-hidden="true"></div>
+
+	<div class="container hero__inner">
+		<div class="split split--wide-first split--center">
+			<div>
+				<p class="chip"><span class="chip__dot chip__dot--pulse"></span>Free software · GPL-3.0-or-later</p>
+
+				<h1 class="hero__title">
+					Read the room.<br>
+					<span class="hero__accent">Hunt the ring.</span>
+				</h1>
+
+				<p class="hero__lead">
+					A native desktop dual-channel RTA for front-of-house engineers. Overlay a
+					<strong class="t-cyan">measurement mic</strong> against the console
+					<strong class="t-amber">solo bus</strong>, and read room response against source
+					signal on one plot instead of guessing between two.
+				</p>
+
+				<div class="btn-row hero__actions">
+					<a class="btn btn--lg btn--cyan" href="https://github.com/d135-1r43/fohanalyzer/releases/latest">
+						<svg class="btn__icon" viewBox="0 0 24 24" aria-hidden="true">
+							<path d="M12 3v12m0 0 4.5-4.5M12 15l-4.5-4.5M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/>
+						</svg>
+						Download for macOS
+					</a>
+					<a class="btn btn--lg" href="https://github.com/d135-1r43/fohanalyzer">
+						Read the source
+					</a>
+				</div>
+
+				<p class="hero__meta">
+					<span>~46 MB .dmg</span>
+					<span>Bundled Java runtime</span>
+					<span>No account, no telemetry</span>
+				</p>
+			</div>
+
+			<div>
+				<!-- Decorative illustration of the analyser, not a live one. -->
+				<foh-spectrum bars="40" height="200"></foh-spectrum>
+				<div class="band band--rule" aria-hidden="true">
+					<div class="band__sub"></div><div class="band__bass"></div>
+					<div class="band__low-mid"></div><div class="band__mid"></div>
+					<div class="band__upper-mid"></div><div class="band__presence"></div>
+					<div class="band__air"></div>
+				</div>
+
+				<div class="hero__readouts">
+					<div class="readout readout--cyan">
+						<span class="readout__label">Licence</span>
+						<span class="readout__value">GPL-3.0</span>
+					</div>
+					<div class="readout readout--amber">
+						<span class="readout__label">Resolution</span>
+						<span class="readout__value">1/24<small>oct</small></span>
+					</div>
+					<div class="readout readout--lime">
+						<span class="readout__label">Price</span>
+						<span class="readout__value">0<small>forever</small></span>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<figure class="shot shot--float">
+			<img class="shot__img" src="assets/img/screenshot.png" width="1366" height="820"
+				alt="The FOHanalyzer window: a dual spectrum plot with a cyan measurement-mic trace over an amber solo-bus trace, frequency-zone legend along the bottom, and a control rail on the right with source cards, ring-out assist, overlays and reference capture."
+				fetchpriority="high" decoding="async">
+		</figure>
+	</div>
+</section>
+
+<!-- ===================== video ===================== -->
+<section class="section section--ruled" id="video">
+	<div class="container">
+		<p class="sec-title">In 37 seconds</p>
+		<h2>See it before you patch it</h2>
+
+		<figure class="mt-7">
+			<div class="shot">
+				<video class="shot__img" controls preload="none" playsinline
+					width="1920" height="1080" poster="assets/video/fohanalyzer-poster.jpg"
+					aria-label="A 37-second tour of FOHanalyzer: the measurement mic and the console solo bus read against each other on one plot, ring-out assist finding a feedback frequency and suggesting a cut, real SPL, and no account or telemetry.">
+					<source src="assets/video/fohanalyzer.mp4" type="video/mp4">
+					<a href="assets/video/fohanalyzer.mp4">Download the video (MP4, 8 MB)</a>
+				</video>
+			</div>
+			<figcaption class="shot__caption">Two traces, one plot, and the ring found before the audience hears it</figcaption>
+		</figure>
+	</div>
+</section>
+
+<!-- ===================== features ===================== -->
+<section class="section section--ruled" id="features">
+	<div class="container">
+		<p class="sec-title sec-title--cyan">What it does</p>
+		<h2>Everything you reach for during a line check</h2>
+		<p class="mt-4 lead measure">
+			Ordered the way a hand moves mid-show: the traces first, then the ring-out assist,
+			then the overlays, then the analysis settings you set once and forget.
+		</p>
+
+		<div class="mt-7 grid grid--wide">
+
+			<foh-reveal>
+			<article class="acc-cyan card">
+				<div class="feature__icon">
+					<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17V9m4 8V5m4 12v-6m4 6V7m4 10v-4"/></svg>
+				</div>
+				<h3 class="feature__title">Two traces, one plot</h3>
+				<p class="feature__text">
+					The measurement-mic trace sits over the console solo-bus trace, so room response
+					and source signal are read against each other rather than in turn. A solo trim
+					closes the 10–20 dB the console leaves between them, and <em>Match</em> lines up
+					the averages in one click.
+				</p>
+			</article>
+			</foh-reveal>
+
+			<foh-reveal delay="60">
+			<article class="acc-red card">
+				<div class="feature__icon">
+					<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v10m0 4h.01M4.2 20h15.6a2 2 0 0 0 1.74-3L13.74 4a2 2 0 0 0-3.48 0L2.46 17a2 2 0 0 0 1.74 3Z"/></svg>
+				</div>
+				<h3 class="feature__title">Ring-out assist</h3>
+				<p class="feature__text">
+					<em>Detect ring</em> runs pitch detection over the live mic and reports the actual
+					ringing fundamental — not the band centre a peak marker rounds to — then suggests a
+					cut. Four blocks are estimated independently and the median wins, so one glitched
+					block cannot move the notch.
+				</p>
+			</article>
+			</foh-reveal>
+
+			<foh-reveal delay="120">
+			<article class="acc-lime card">
+				<div class="feature__icon">
+					<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3Z"/><path d="M19 11a7 7 0 0 1-14 0M12 18v3"/></svg>
+				</div>
+				<h3 class="feature__title">Real SPL, not dBFS</h3>
+				<p class="feature__text">
+					Calibrate once against a known reference level and the big lime readout is genuine
+					dB SPL, with a ± nudge for when it drifts from a hand-held meter. Until you
+					calibrate, the meter stays hidden rather than passing dBFS off as SPL.
+				</p>
+			</article>
+			</foh-reveal>
+
+			<foh-reveal>
+			<article class="acc-amber card">
+				<div class="feature__icon">
+					<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>
+				</div>
+				<h3 class="feature__title">Overlays that answer questions</h3>
+				<p class="feature__text">
+					Peak hold for what the plot did while you were not looking, peak markers for where
+					it lives, and a transfer function for the mic−solo difference.
+				</p>
+			</article>
+			</foh-reveal>
+
+			<foh-reveal delay="60">
+			<article class="acc-cyan card">
+				<div class="feature__icon">
+					<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/><circle cx="12" cy="12" r="9"/></svg>
+				</div>
+				<h3 class="feature__title">Reference capture</h3>
+				<p class="feature__text">
+					A dashed ghost of both traces, frozen where you left them. The honest way to A/B
+					before against after EQ, instead of trusting what you remember the curve looked like.
+				</p>
+			</article>
+			</foh-reveal>
+
+			<foh-reveal delay="120">
+			<article class="acc-low-mid card">
+				<div class="feature__icon">
+					<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10m4 10V4m4 16v-7m4 7V7m4 13v-4"/></svg>
+				</div>
+				<h3 class="feature__title">1/1 to 1/24 octave</h3>
+				<p class="feature__text">
+					Wide bands to see the shape of a room, narrow bands to find the one that is about to
+					go. Smoothing and frame averaging on top of either.
+				</p>
+			</article>
+			</foh-reveal>
+
+			<foh-reveal>
+			<article class="acc-mid card">
+				<div class="feature__icon">
+					<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8"/></svg>
+				</div>
+				<h3 class="feature__title">Works with nothing plugged in</h3>
+				<p class="feature__text">
+					Every source can run from a simulated preset, and <em>Inject feedback</em> is a
+					practice mode for the ring-out workflow. The whole app is usable — and reviewable,
+					and testable — without an interface on the desk.
+				</p>
+			</article>
+			</foh-reveal>
+
+			<foh-reveal delay="60">
+			<article class="acc-mut card">
+				<div class="feature__icon">
+					<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.1 2.1m8.6 8.6 2.1 2.1M18.4 5.6l-2.1 2.1m-8.6 8.6-2.1 2.1"/><circle cx="12" cy="12" r="3.2"/></svg>
+				</div>
+				<h3 class="feature__title">It remembers your rig</h3>
+				<p class="feature__text">
+					Inputs, channels, calibration and view options persist between launches. Move
+					between rigs and a missing interface quietly falls back to the simulator instead of
+					pointing at a line that cannot open.
+				</p>
+			</article>
+			</foh-reveal>
+
+			<foh-reveal delay="120">
+			<article class="acc-lime card">
+				<div class="feature__icon">
+					<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 9h8M8 13h5"/><path d="M4 5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-7l-5 4v-4H6a2 2 0 0 1-2-2Z"/></svg>
+				</div>
+				<h3 class="feature__title">Ask an AI assistant</h3>
+				<p class="feature__text">
+					An optional, read-only MCP server lets Claude Code, Claude Desktop or ChatGPT read
+					the ring-out history, the readouts and the current band levels, and turn them into
+					mixing tips. It is off by default and only answers on this machine.
+				</p>
+			</article>
+			</foh-reveal>
+
+		</div>
+	</div>
+</section>
+
+<!-- ===================== open source ===================== -->
+<section class="section section--ruled" id="open-source">
+	<div class="container">
+		<div class="split">
+			<div>
+				<p class="sec-title sec-title--lime">Open source</p>
+				<h2>Free as in freedom, and free as in it costs nothing</h2>
+				<p class="mt-4 lead">
+					FOHanalyzer is licensed <strong>GPL-3.0-or-later</strong>. You can read every line,
+					build it yourself, change what annoys you, and pass it on. There is no paid tier
+					waiting behind a feature, because there is no tier.
+				</p>
+				<p class="mt-4 dim">
+					The licence is not a marketing position — it is inherited.
+					<a href="https://github.com/JorenSix/TarsosDSP">TarsosDSP</a>, which does the FFT and
+					the pitch detection, is GPL-3.0, and linking against it means everything shipped here
+					has to be GPL-compatible too. That suits the project fine.
+				</p>
+
+				<div class="mt-6 btn-row">
+					<a class="btn btn--lime" href="contribute.html">How to contribute</a>
+					<a class="btn btn--ghost" href="https://github.com/d135-1r43/fohanalyzer/blob/master/LICENSE">Read the licence</a>
+				</div>
+			</div>
+
+			<div class="grid--sm grid">
+				<div class="readout">
+					<span class="readout__label">Runtime dependencies</span>
+					<span class="readout__value">5</span>
+					<span class="mt-2 feature__text">JavaFX, TarsosDSP, SLF4J, and the MCP SDK on Jetty. That is the whole list.</span>
+				</div>
+				<div class="readout">
+					<span class="readout__label">Network calls</span>
+					<span class="readout__value">0</span>
+					<span class="mt-2 feature__text">No account, no licence check, no telemetry, no update ping. The MCP server only listens.</span>
+				</div>
+				<div class="readout">
+					<span class="readout__label">Config files</span>
+					<span class="readout__value">0</span>
+					<span class="mt-2 feature__text">Settings live in the platform preference store, not a dotfile you have to find.</span>
+				</div>
+				<div class="readout">
+					<span class="readout__label">CI on every push</span>
+					<span class="readout__value">✓</span>
+					<span class="mt-2 feature__text">Tests, format check and a packaged <code>.dmg</code> attached to the run.</span>
+				</div>
+			</div>
+		</div>
+
+		<div class="mt-7 callout callout--lime">
+			<p class="callout__title">Your measurements stay on your laptop</p>
+			<p>
+				The app captures audio from a local input, draws it, and forgets it. Nothing is uploaded,
+				nothing is stored beyond the settings you chose, and the microphone permission macOS asks
+				for is exactly what it says: the measurement mic and console feeds the analyser needs to
+				read. You do not have to take that on trust — it is
+				<a href="https://github.com/d135-1r43/fohanalyzer/tree/master/src/main/java/com/fohanalyzer/audio">a few hundred lines you can read</a>.
+			</p>
+		</div>
+	</div>
+</section>
+
+<!-- ===================== internals ===================== -->
+<section class="section section--ruled" id="internals">
+	<div class="container">
+		<p class="sec-title sec-title--amber">How it works</p>
+		<h2>A small codebase, on purpose</h2>
+		<p class="mt-4 lead measure">
+			Six packages, plainly named. If you have written any Java, you can find your way around
+			this in an afternoon — which is rather the point of asking you to contribute.
+		</p>
+
+		<div class="mt-7 split">
+			<div>
+				<p class="sec-title">Packages</p>
+				<div class="table-wrap">
+					<table class="deflist">
+						<thead>
+							<tr><th scope="col">Package</th><th scope="col">Responsibility</th></tr>
+						</thead>
+						<tbody>
+							<tr><th scope="row">engine</th><td>Frequency math, note names, formatting, signal simulation</td></tr>
+							<tr><th scope="row">dsp</th><td>Per-band averaging, smoothing, peak hold, stats</td></tr>
+							<tr><th scope="row">audio</th><td>Java Sound capture, FFT and pitch detection, device enumeration</td></tr>
+							<tr><th scope="row">ui</th><td>JavaFX canvas rendering and render loop, app shell, control rail, preferences</td></tr>
+							<tr><th scope="row">mcp</th><td>Analyzer history, MCP tools, and the embedded HTTP server that serves them</td></tr>
+							<tr><th scope="row">ui.controls</th><td>Toggle, Segmented, Meter, SourceCard, ChannelSelect, Logo</td></tr>
+						</tbody>
+					</table>
+				</div>
+			</div>
+
+			<div>
+				<p class="sec-title">Dependencies</p>
+				<div class="table-wrap">
+					<table class="deflist">
+						<thead>
+							<tr><th scope="col">Dependency</th><th scope="col">For</th><th scope="col">Licence</th></tr>
+						</thead>
+						<tbody>
+							<tr><th scope="row"><a href="https://openjfx.io">JavaFX</a></th><td>UI toolkit and canvas</td><td>GPLv2 + CE</td></tr>
+							<tr><th scope="row"><a href="https://github.com/JorenSix/TarsosDSP">TarsosDSP</a></th><td>FFT, windows, YIN pitch detection</td><td>GPL-3.0</td></tr>
+							<tr><th scope="row"><a href="https://www.slf4j.org">SLF4J</a></th><td>Logging</td><td>MIT</td></tr>
+							<tr><th scope="row"><a href="https://github.com/modelcontextprotocol/java-sdk">MCP Java SDK</a></th><td>MCP protocol and Streamable HTTP transport</td><td>MIT</td></tr>
+							<tr><th scope="row"><a href="https://jetty.org">Jetty</a></th><td>Hosts the MCP server on localhost</td><td>EPL-2.0 / Apache-2.0</td></tr>
+							<tr><th scope="row">JUnit 5</th><td>Tests only</td><td>EPL-2.0</td></tr>
+						</tbody>
+					</table>
+				</div>
+
+				<p class="mt-5 feature__text">
+					Live input is captured on a daemon thread into a 16384-sample ring buffer. Each frame
+					the newest window is Blackman-windowed, transformed, and converted to dBFS per bin.
+					The full write-up — including why the app is deliberately non-modular, and why the
+					broadband RMS stays hand-rolled — is in the
+					<a href="https://github.com/d135-1r43/fohanalyzer#how-it-works">README</a>.
+				</p>
+			</div>
+		</div>
+
+		<div class="mt-8 split split--wide-first">
+			<div>
+				<p class="sec-title">A worked example: the rail and the window</p>
+				<p class="dim">
+					The control rail is ordered by how often a hand reaches for something mid-show: the
+					source traces and what they read, then ring-out assist, then the overlays, then the
+					analysis settings last. Everything decided once when the rig is patched — which device
+					feeds each source, and the SPL calibration — lives in a separate <em>Preferences</em>
+					window instead, so it is not competing for the column you have to read during a show.
+				</p>
+				<p class="mt-4 dim">
+					Nothing in that window is a commit step. The controls bind straight to the shared state
+					that gets persisted anyway, so there is nothing to apply and nothing to cancel — the
+					button in the corner only closes the window, and closing it changes nothing. The source
+					cards back on the rail still carry a read-only line naming the current selection, because
+					"is this trace live or simulated, and on which channel" is a question you ask at a glance
+					while working — even though the answer is only <em>set</em> once.
+				</p>
+				<p class="mt-4 feature__text">
+					That is the level at which the whole codebase is documented, which is what makes it
+					approachable to change.
+				</p>
+			</div>
+
+			<figure>
+				<div class="shot">
+					<img class="shot__img" src="assets/img/preferences.png" width="420" height="520"
+						alt="The Preferences window: an input device and channel picker for each source, and the SPL calibration field."
+						loading="lazy" decoding="async">
+				</div>
+				<figcaption class="shot__caption">Preferences — set once, when the rig is patched</figcaption>
+			</figure>
+		</div>
+	</div>
+</section>
+
+<!-- ===================== maintainer ===================== -->
+<section class="section section--ruled" id="maintainer">
+	<div class="container">
+		<div class="split split--wide-first">
+			<div>
+				<p class="sec-title sec-title--cyan">Who makes this</p>
+				<h2>One maintainer, and whoever shows up</h2>
+				<p class="mt-4 lead">
+					FOHanalyzer is developed and maintained by
+					<a href="https://herhoffer.net">Markus Herhoffer</a>. It is a non-commercial,
+					spare-time project.
+				</p>
+			</div>
+
+			<div class="card acc-cyan">
+				<div class="card__head">
+					<span class="card__dot"></span>
+					<div>
+						<p class="person__name">Markus Herhoffer</p>
+						<p class="person__role">Developer &amp; maintainer</p>
+					</div>
+				</div>
+				<ul class="person__links">
+					<li>
+						<a href="https://herhoffer.net" rel="me">
+							<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18a15 15 0 0 1 0-18"/></svg>
+							herhoffer.net
+						</a>
+					</li>
+					<li>
+						<a href="https://github.com/d135-1r43" rel="me">
+							<svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor" stroke="none"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.11.79-.25.79-.56v-2c-3.2.7-3.88-1.54-3.88-1.54-.53-1.34-1.29-1.7-1.29-1.7-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.71 1.26 3.37.96.1-.75.4-1.26.73-1.55-2.56-.29-5.25-1.28-5.25-5.7 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11 11 0 0 1 5.79 0c2.21-1.49 3.18-1.18 3.18-1.18.63 1.59.23 2.76.11 3.05.74.81 1.18 1.84 1.18 3.1 0 4.43-2.69 5.4-5.26 5.69.41.36.78 1.06.78 2.14v3.17c0 .31.21.68.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg>
+							@d135-1r43
+						</a>
+					</li>
+					<li>
+						<a href="https://mastodon.social/@d135_1r43" rel="me">
+							<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8.5c0-3-2-4.5-6-4.5S6 5.5 6 8.5v4c0 3 2 4 4 4h4"/><path d="M9 12V9.5a1.8 1.8 0 0 1 3-1.2 1.8 1.8 0 0 1 3 1.2V12"/><path d="M6 16c1 2.5 3.5 3.2 7 3"/></svg>
+							@d135_1r43
+						</a>
+					</li>
+				</ul>
+				<p class="mt-4 feature__text">
+					For anything about the software, the
+					<a href="https://github.com/d135-1r43/fohanalyzer/issues">issue tracker</a> beats
+					email — other people get to read the answer.
+				</p>
+			</div>
+		</div>
+	</div>
+</section>
+
+<!-- ===================== contribute ===================== -->
+<section class="section section--ruled" id="contribute">
+	<div class="container">
+		<div class="center">
+			<p class="sec-title sec-title--lime">Contribute</p>
+			<h2>This is where you come in</h2>
+			<p class="mt-4 lead measure center">
+				FOHanalyzer gets better the more rigs it meets. You do not need to be a DSP engineer to
+				move it forward — some of the most useful contributions are not code at all.
+			</p>
+		</div>
+
+		<div class="mt-7 grid grid--wide">
+
+			<foh-reveal>
+			<article class="acc-cyan card card--link">
+				<div class="card__head">
+					<span class="card__dot"></span>
+					<h3 class="card__title">
+						<a class="card__link" href="contribute.html#report">Run it on your rig and tell us what broke</a>
+					</h3>
+				</div>
+				<div class="card__body">
+					<p>
+						Device enumeration is the messiest part of any audio app. An 18-in Scarlett, a Wing,
+						a USB stick mic, a Dante virtual soundcard — each one is a data point nobody has
+						unless you send it.
+					</p>
+				</div>
+				<p class="card__more">Open an issue <span>→</span></p>
+			</article>
+			</foh-reveal>
+
+			<foh-reveal delay="60">
+			<article class="acc-amber card card--link">
+				<div class="card__head">
+					<span class="card__dot"></span>
+					<h3 class="card__title">
+						<a class="card__link" href="contribute.html#platforms">Package it for Windows and Linux</a>
+					</h3>
+				</div>
+				<div class="card__body">
+					<p>
+						The code is plain JavaFX and Java Sound; only the packaging script is macOS-specific.
+						A well-scoped, high-impact job with a clear finish line — and one of the most-asked-for
+						things in the project.
+					</p>
+				</div>
+				<p class="card__more">See what is involved <span>→</span></p>
+			</article>
+			</foh-reveal>
+
+			<foh-reveal delay="120">
+			<article class="acc-lime card card--link">
+				<div class="card__head">
+					<span class="card__dot"></span>
+					<h3 class="card__title">
+						<a class="card__link" href="contribute.html#dsp">Sharpen the measurement</a>
+					</h3>
+				</div>
+				<div class="card__body">
+					<p>
+						A/C weighting, coherence, phase, impulse response, a proper dual-FFT transfer
+						function. The <code>dsp</code> and <code>engine</code> packages are pure, fully
+						tested functions — the friendliest place in the codebase to land a change.
+					</p>
+				</div>
+				<p class="card__more">Pick something up <span>→</span></p>
+			</article>
+			</foh-reveal>
+
+			<foh-reveal>
+			<article class="acc-low-mid card card--link">
+				<div class="card__head">
+					<span class="card__dot"></span>
+					<h3 class="card__title">
+						<a class="card__link" href="contribute.html#design">Argue with the interface</a>
+					</h3>
+				</div>
+				<div class="card__body">
+					<p>
+						The rail is ordered by how often a hand reaches for something mid-show. If that
+						ordering is wrong for how <em>you</em> work, that is a real bug, and saying so is a
+						real contribution.
+					</p>
+				</div>
+				<p class="card__more">Tell us <span>→</span></p>
+			</article>
+			</foh-reveal>
+
+			<foh-reveal delay="60">
+			<article class="acc-mid card card--link">
+				<div class="card__head">
+					<span class="card__dot"></span>
+					<h3 class="card__title">
+						<a class="card__link" href="contribute.html#docs">Write the docs you wished you had</a>
+					</h3>
+				</div>
+				<div class="card__body">
+					<p>
+						A short guide to ringing out a wedge with this tool would help more engineers than
+						most features would. So would a translation, or a screenshot of it working on your
+						desk.
+					</p>
+				</div>
+				<p class="card__more">Start here <span>→</span></p>
+			</article>
+			</foh-reveal>
+
+			<foh-reveal delay="120">
+			<article class="acc-mut card card--link">
+				<div class="card__head">
+					<span class="card__dot"></span>
+					<h3 class="card__title">
+						<a class="card__link" href="https://github.com/d135-1r43/fohanalyzer/issues">Be the first in the tracker</a>
+					</h3>
+				</div>
+				<div class="card__body">
+					<p>
+						This is a young project and the issue list is short. Nothing is claimed, nothing is
+						queued behind six months of backlog, and whatever you file gets read — which is a
+						better position to arrive in than most.
+					</p>
+				</div>
+				<p class="card__more">Open the tracker <span>→</span></p>
+			</article>
+			</foh-reveal>
+
+		</div>
+
+		<div class="mt-8 cta">
+			<h2 class="cta__title">Two commands from clone to running</h2>
+			<p class="cta__text">
+				JDK 25 and Maven 3.9 are the only prerequisites, and the simulator means you can see the
+				thing work before you own a measurement mic.
+			</p>
+
+			<foh-copy>
+<pre><code><span class="prompt">$ </span>git clone https://github.com/d135-1r43/fohanalyzer
+<span class="prompt">$ </span>cd fohanalyzer &amp;&amp; mvn javafx:run</code></pre>
+			</foh-copy>
+
+			<div class="mt-6 btn-row btn-row--center">
+				<a class="btn btn--lg btn--lime" href="contribute.html">Read the contributor guide</a>
+				<a class="btn btn--lg" href="https://github.com/d135-1r43/fohanalyzer/issues/new">Open an issue</a>
+			</div>
+		</div>
+	</div>
+</section>
+
+</main>
+
+<!-- ===================== footer ===================== -->
+<footer class="site-footer">
+	<div class="container">
+		<div class="site-footer__grid">
+			<div class="site-footer__brand">
+				<a class="brand" href="./">
+					<img src="assets/img/logo.svg" width="34" height="34" alt="">
+					<span class="brand__marks">
+						<span class="brand__name">FOHanalyzer</span>
+						<span class="brand__sub">Dual Spectrum · RTA</span>
+					</span>
+				</a>
+				<p class="site-footer__blurb">
+					A dual-channel real-time analyser for front-of-house engineers. Built in the open,
+					because the people who need it are the people who can improve it.
+				</p>
+			</div>
+
+			<nav class="site-footer__nav" aria-label="Product">
+				<p class="sec-title">Product</p>
+				<ul>
+					<li><a href="#features">Features</a></li>
+					<li><a href="#internals">How it works</a></li>
+					<li><a href="https://github.com/d135-1r43/fohanalyzer/releases/latest">Download</a></li>
+					<li><a href="https://github.com/d135-1r43/fohanalyzer#install">Install notes</a></li>
+				</ul>
+			</nav>
+
+			<nav class="site-footer__nav" aria-label="Project">
+				<p class="sec-title">Project</p>
+				<ul>
+					<li><a href="contribute.html">Contribute</a></li>
+					<li><a href="https://github.com/d135-1r43/fohanalyzer">Source code</a></li>
+					<li><a href="https://github.com/d135-1r43/fohanalyzer/issues">Issue tracker</a></li>
+					<li><a href="https://github.com/d135-1r43/fohanalyzer-website">Website source</a></li>
+				</ul>
+			</nav>
+
+			<nav class="site-footer__nav" aria-label="Legal">
+				<p class="sec-title">Legal</p>
+				<ul>
+					<li><a href="impressum.html">Impressum</a></li>
+					<li><a href="https://github.com/d135-1r43/fohanalyzer/blob/master/LICENSE">GPL-3.0-or-later</a></li>
+					<li><a href="https://www.gnu.org/philosophy/free-sw.html">What free software means</a></li>
+					<li><a href="https://openfontlicense.org">SIL OFL 1.1 (fonts)</a></li>
+				</ul>
+			</nav>
+		</div>
+
+		<div class="mt-7 band band--rule" aria-hidden="true">
+			<div class="band__sub"></div><div class="band__bass"></div>
+			<div class="band__low-mid"></div><div class="band__mid"></div>
+			<div class="band__upper-mid"></div><div class="band__presence"></div>
+			<div class="band__air"></div>
+		</div>
+
+		<p class="site-footer__legal">
+			FOHanalyzer is free software under <a href="https://github.com/d135-1r43/fohanalyzer/blob/master/LICENSE">GPL-3.0-or-later</a>, and comes with absolutely no warranty.<br>
+			Developed and maintained by <a href="https://herhoffer.net">Markus Herhoffer</a> · <a href="impressum.html">Impressum</a><br>
+			Set in <a href="https://github.com/carrois/Barlow">Barlow</a> and <a href="https://github.com/IBM/plex">IBM Plex Mono</a>, both under the SIL Open Font License 1.1, self-hosted.<br>
+			This site sets no cookies and profiles nobody; visits are counted by a self-hosted, cookieless Plausible instance.
+		</p>
+	</div>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,135 @@
+/* ---------------------------------------------------------------------------
+   Design tokens — the single source of truth for the site's look.
+
+   Ported from the app's own stylesheet,
+   fohanalyzer/src/main/resources/com/fohanalyzer/theme.css, so the site
+   and the application it describes are the same design. The JavaFX names
+   (-bg, -panel, -line, -txt-dim, …) are kept verbatim as --bg, --panel, … so
+   a colour can be traced between the two files without a translation step.
+
+   Nothing here is a rule. Only custom properties live in this file; if you
+   are adding a selector, it belongs in base.css or components.css.
+   --------------------------------------------------------------------------- */
+
+:root {
+	/* -- surfaces ---------------------------------------------------------- */
+	--bg: #070a0f;
+	--panel: #0d121b;
+	--panel-2: #10161f;
+	--line: #1c2733;
+	--line-soft: #161e28;
+
+	/* The header gradient, reused for any raised strip. */
+	--grad-header: linear-gradient(to bottom, #0e141d, #0b1018);
+
+	/* -- text -------------------------------------------------------------- */
+	--txt: #e7eef6;
+	--txt-dim: #8595a6;
+	--txt-mut: #5b6a7a;
+	/* .rail-foot in the app — the quietest text there is. */
+	--txt-faint: #3a4654;
+
+	/* -- accents ----------------------------------------------------------- */
+	/* Cyan is the measurement-mic trace, amber the solo bus, lime the SPL
+	   readout and the version chip. The site keeps those meanings: cyan is the
+	   primary action, amber is secondary, lime marks anything to do with the
+	   project being open and live. */
+	--cyan: #22d3ee;
+	--amber: #f5a524;
+	--lime: #a3e635;
+	--red: #f5575d;
+	--red-soft: #ff8a8e;
+
+	/* Translucent accent washes — the app's button fills. */
+	--cyan-wash: rgba(34, 211, 238, 0.08);
+	--cyan-edge: rgba(34, 211, 238, 0.35);
+	--amber-wash: rgba(245, 165, 36, 0.08);
+	--amber-edge: rgba(245, 165, 36, 0.35);
+	--lime-wash: rgba(163, 230, 53, 0.08);
+	--lime-edge: rgba(163, 230, 53, 0.35);
+	--red-wash: rgba(245, 87, 93, 0.10);
+	--red-edge: rgba(245, 87, 93, 0.40);
+
+	/* -- spectrum zones ---------------------------------------------------- */
+	/* The frequency bands under the plot, from Engine.ZONES. */
+	--zone-sub: #3b5bff;
+	--zone-bass: #2f9bff;
+	--zone-low-mid: #19c6c6;
+	--zone-mid: #2fd07a;
+	--zone-upper-mid: #a3e635;
+	--zone-presence: #f5a524;
+	--zone-air: #f5575d;
+
+	/* -- type -------------------------------------------------------------- */
+	/* Barlow stands in for Saira, exactly as it does in the app; Saira is kept
+	   next in the stack for anyone who has it. See the app README, Typography. */
+	--font-ui: "Barlow", "Saira", "Helvetica Neue", system-ui, sans-serif;
+	--font-mono: "IBM Plex Mono", "Menlo", ui-monospace, monospace;
+
+	/* A modest scale. Display sizes are fluid so the hero holds together from
+	   a phone to a wide desktop without a cascade of breakpoints. */
+	--fs-display: clamp(2.5rem, 1.6rem + 4.2vw, 5rem);
+	--fs-h2: clamp(1.75rem, 1.35rem + 1.8vw, 2.6rem);
+	--fs-h3: 1.3rem;
+	--fs-body-lg: 1.125rem;
+	--fs-body: 1rem;
+	--fs-sm: 0.875rem;
+	--fs-xs: 0.75rem;
+	/* The app's 9–10px mono micro-labels: section titles, chips, readout keys. */
+	--fs-micro: 0.625rem;
+
+	--lh-tight: 1.1;
+	--lh-heading: 1.15;
+	--lh-body: 1.65;
+
+	/* The mono micro-label treatment, used often enough to be worth a token. */
+	--tracking-micro: 0.14em;
+
+	/* -- space ------------------------------------------------------------- */
+	/* A 4px base step, matching the app's padding rhythm. */
+	--sp-1: 0.25rem;
+	--sp-2: 0.5rem;
+	--sp-3: 0.75rem;
+	--sp-4: 1rem;
+	--sp-5: 1.5rem;
+	--sp-6: 2rem;
+	--sp-7: 3rem;
+	--sp-8: 4rem;
+	--sp-9: 6rem;
+
+	/* Vertical rhythm between major page sections. */
+	--section-y: clamp(3.5rem, 2rem + 6vw, 7rem);
+
+	/* -- shape ------------------------------------------------------------- */
+	--r-sm: 5px;
+	--r-md: 8px;
+	--r-lg: 10px;
+	--r-xl: 14px;
+	--r-pill: 999px;
+
+	/* -- layout ------------------------------------------------------------ */
+	--measure: 68ch;
+	--container: 1200px;
+	--container-narrow: 820px;
+	/* The app's 18px side gutter, widened on larger viewports. */
+	--gutter: clamp(1.125rem, 0.75rem + 1.5vw, 2rem);
+	--header-h: 74px;
+
+	/* -- motion ------------------------------------------------------------ */
+	--ease: cubic-bezier(0.4, 0, 0.2, 1);
+	--dur-fast: 120ms;
+	--dur: 220ms;
+	--dur-slow: 420ms;
+
+	/* -- depth ------------------------------------------------------------- */
+	--shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+	--shadow-lg: 0 24px 60px rgba(0, 0, 0, 0.55);
+	--focus-ring: 0 0 0 2px var(--bg), 0 0 0 4px var(--cyan);
+}
+
+/* The app is dark-only, and so is this site: a light mode would be a second
+   design rather than a variant of this one. The declaration tells the browser
+   to render form controls, scrollbars and the like to match. */
+:root {
+	color-scheme: dark;
+}

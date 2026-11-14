@@ -1,0 +1,17 @@
+# Only the files the Dockerfile COPYs end up in the image, but keeping the
+# build context small keeps builds fast and avoids sending anything private
+# to the daemon.
+.git
+.github
+.gitignore
+.dockerignore
+Dockerfile
+README.md
+tools
+.venv
+*.md
+.DS_Store
+**/.DS_Store
+.idea
+.vscode
+node_modules

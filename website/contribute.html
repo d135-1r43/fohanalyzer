@@ -1,0 +1,559 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Contribute — FOHanalyzer</title>
+<meta name="description" content="How to contribute to FOHanalyzer, the open-source dual-channel RTA: what needs doing, how to get it running in two commands, the house code style, and how a change gets merged.">
+
+<link rel="canonical" href="https://fohanalyzer.com/contribute.html">
+<link rel="icon" href="assets/img/logo.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="assets/img/logo.png">
+<meta name="theme-color" content="#070a0f">
+
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="FOHanalyzer">
+<meta property="og:locale" content="en_GB">
+<meta property="og:url" content="https://fohanalyzer.com/contribute.html">
+<meta property="og:title" content="Contribute to FOHanalyzer">
+<meta property="og:description" content="What needs doing, how to get it running in two commands, the house code style, and how a change gets merged. No CLA, no backlog to earn your way into.">
+<meta property="og:image" content="https://fohanalyzer.com/assets/img/og.png">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="The FOHanalyzer wordmark over the headline “Read the room. Hunt the ring.”, beside a spectrum-analyser bar display in cyan, lime and amber.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Contribute to FOHanalyzer">
+<meta name="twitter:description" content="What needs doing, how to get it running in two commands, the house code style, and how a change gets merged. No CLA, no backlog to earn your way into.">
+<meta name="twitter:image" content="https://fohanalyzer.com/assets/img/og.png">
+<meta name="twitter:image:alt" content="The FOHanalyzer wordmark over the headline “Read the room. Hunt the ring.”, beside a spectrum-analyser bar display in cyan, lime and amber.">
+
+<link rel="preload" href="assets/fonts/Barlow-Regular.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/IBMPlexMono-Bold.woff2" as="font" type="font/woff2" crossorigin>
+
+<link rel="stylesheet" href="assets/css/tokens.css">
+<link rel="stylesheet" href="assets/css/base.css?v=2">
+<link rel="stylesheet" href="assets/css/components.css">
+<script src="assets/js/components.js" defer></script>
+
+<!-- Privacy-friendly analytics: self-hosted Plausible, no cookies, no personal data.
+     The inline half is allow-listed in nginx.conf by SHA-256 hash, so it has to stay
+     byte-identical on every page. Re-run tools/csp-hash.py after touching it. -->
+<script async src="https://plausible.herhoffer.net/js/pa-y3gCzXvtaF6PA8rX-mQi9.js"></script>
+<script>
+  window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
+  plausible.init()
+</script>
+</head>
+
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<!-- ===================== header ===================== -->
+<header class="site-header">
+	<div class="container site-header__inner">
+		<a class="brand" href="./">
+			<img src="assets/img/logo.svg" width="34" height="34" alt="">
+			<span class="brand__marks">
+				<span class="brand__name">FOHanalyzer</span>
+				<span class="brand__sub">Dual Spectrum · RTA</span>
+			</span>
+		</a>
+
+		<nav class="nav" aria-label="Primary">
+			<ul class="nav__list">
+				<li><a class="nav__link" href="./#features">Features</a></li>
+				<li><a class="nav__link" href="./#open-source">Open source</a></li>
+				<li><a class="nav__link" href="./#internals">How it works</a></li>
+				<li><a class="nav__link" href="contribute.html" aria-current="page">Contribute</a></li>
+			</ul>
+			<a class="btn btn--mini btn--lime" href="https://github.com/d135-1r43/fohanalyzer">
+				<svg class="btn__icon" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor" stroke="none">
+					<path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.11.79-.25.79-.56v-2c-3.2.7-3.88-1.54-3.88-1.54-.53-1.34-1.29-1.7-1.29-1.7-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.71 1.26 3.37.96.1-.75.4-1.26.73-1.55-2.56-.29-5.25-1.28-5.25-5.7 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11 11 0 0 1 5.79 0c2.21-1.49 3.18-1.18 3.18-1.18.63 1.59.23 2.76.11 3.05.74.81 1.18 1.84 1.18 3.1 0 4.43-2.69 5.4-5.26 5.69.41.36.78 1.06.78 2.14v3.17c0 .31.21.68.8.56A11.5 11.5 0 0 0 12 .5Z"/>
+				</svg>
+				GitHub
+			</a>
+		</nav>
+	</div>
+</header>
+
+<main id="main">
+
+<!-- ===================== hero ===================== -->
+<section class="hero">
+	<div class="hero__glow" aria-hidden="true"></div>
+
+	<div class="container container--narrow hero__inner">
+		<p class="chip"><span class="chip__dot chip__dot--pulse"></span>Contributions welcome</p>
+
+		<h1 class="hero__title">Nobody is standing at your desk</h1>
+
+		<p class="hero__lead">
+			FOHanalyzer is a small project. There is no roadmap committee, no CLA to sign, and no
+			backlog you have to earn your way into. If something about this tool is wrong for the way
+			you work a show, you are already qualified to fix it — and if you would rather just say so
+			in an issue, that helps too.
+		</p>
+
+		<div class="btn-row hero__actions">
+			<a class="btn btn--lg btn--lime" href="#start">Get it running</a>
+			<a class="btn btn--lg" href="#ideas">See what needs doing</a>
+		</div>
+
+		<div class="mt-8 band band--rule" aria-hidden="true">
+			<div class="band__sub"></div><div class="band__bass"></div>
+			<div class="band__low-mid"></div><div class="band__mid"></div>
+			<div class="band__upper-mid"></div><div class="band__presence"></div>
+			<div class="band__air"></div>
+		</div>
+	</div>
+</section>
+
+<!-- ===================== no-code contributions ===================== -->
+<section class="section section--ruled" id="report">
+	<div class="container">
+		<p class="sec-title sec-title--cyan">Start here</p>
+		<h2>The most valuable thing you can send costs you ten minutes</h2>
+		<p class="mt-4 lead measure">
+			Not code. A report from a rig the maintainer does not own.
+		</p>
+
+		<div class="mt-6 split">
+			<div class="stack">
+				<p class="dim">
+					Audio device enumeration is where every analyser goes wrong, and it goes wrong
+					differently on every interface. FOHanalyzer lists devices once at launch, maps their
+					channels, and has to guess sensibly when a saved 18-in interface reopens on a 2-in
+					one. There is no way to test that except on real hardware.
+				</p>
+				<p class="dim">If you have five minutes and an interface, this is the highest-leverage thing you can do:</p>
+				<ul class="dim">
+					<li>Open <em>Preferences</em> and check every device in the list is one you recognise.</li>
+					<li>Point a source at a multi-channel interface and step through the channels.</li>
+					<li>Unplug it, relaunch, and confirm the app falls back to the simulator instead of failing.</li>
+					<li>Tell us what you saw — including "all fine", which is genuinely useful data.</li>
+				</ul>
+			</div>
+
+			<div class="stack">
+				<div class="callout">
+					<p class="callout__title">A good report has three lines</p>
+					<p>
+						The interface and how it is connected, what you expected, and what happened instead.
+						macOS version and the version chip from the app header if you have them. Screenshots
+						of the plot are welcome — the trace usually says more than a paragraph.
+					</p>
+				</div>
+				<div class="btn-row">
+					<a class="btn btn--cyan" href="https://github.com/d135-1r43/fohanalyzer/issues/new">Report what you found</a>
+				</div>
+			</div>
+		</div>
+	</div>
+</section>
+
+<!-- ===================== getting started ===================== -->
+<section class="section section--ruled" id="start">
+	<div class="container">
+		<p class="sec-title sec-title--lime">Getting started</p>
+		<h2>Clone, run, change something</h2>
+		<p class="mt-4 lead measure">
+			You need <strong>JDK 25+</strong> and <strong>Maven 3.9+</strong>. You do not need a
+			measurement mic, an interface, or a venue — every source runs from a simulated preset.
+		</p>
+
+		<ol class="mt-7 steps">
+			<li>
+				<h3 class="steps__title">Get it running</h3>
+				<div class="steps__body">
+					<p>Two commands. The window that opens is the one in the screenshots, driven by simulated sources.</p>
+					<foh-copy>
+<pre><code><span class="prompt">$ </span>git clone https://github.com/d135-1r43/fohanalyzer
+<span class="prompt">$ </span>cd fohanalyzer
+<span class="prompt">$ </span>mvn javafx:run</code></pre>
+					</foh-copy>
+					<p>
+						<code>mvn test</code> and <code>mvn package</code> work even if <code>JAVA_HOME</code>
+						points at an older JDK — the POM picks an installed 25+ toolchain. Running and
+						packaging are not covered by that, so put <code>JAVA_HOME</code> on 25 yourself:
+					</p>
+					<foh-copy>
+<pre><code><span class="prompt">$ </span>export JAVA_HOME=$(/usr/libexec/java_home -v 25)   <span class="comment"># macOS</span></code></pre>
+					</foh-copy>
+				</div>
+			</li>
+
+			<li>
+				<h3 class="steps__title">Find your way around</h3>
+				<div class="steps__body">
+					<p>
+						Six packages, no framework, no dependency injection container, no code generation.
+						<code>engine</code> and <code>dsp</code> are pure functions with full test coverage —
+						start there if you want a change that is easy to prove correct.
+					</p>
+					<p>
+						The <a href="https://github.com/d135-1r43/fohanalyzer#how-it-works">README</a> is
+						unusually detailed on purpose: it explains not just what the code does but why it is
+						shaped that way, down to why the Blackman window is the symmetric definition and why
+						the broadband RMS is hand-rolled. Read the section covering the area you are touching
+						before you change it — it will usually already answer your first question.
+					</p>
+				</div>
+			</li>
+
+			<li>
+				<h3 class="steps__title">Use the dev aids</h3>
+				<div class="steps__body">
+					<p>
+						CSS hot reload re-applies <code>theme.css</code> to the running window on save, so
+						padding and colour work does not need a restart. The render probe boots the app,
+						snapshots the window and exits — handy for a visual check without a display.
+					</p>
+					<foh-copy>
+<pre><code><span class="prompt">$ </span>FOH_DEV=true mvn javafx:run   <span class="comment"># CSS hot reload</span>
+<span class="prompt">$ </span>PROBE=true mvn javafx:run     <span class="comment"># snapshot to target/probe-full.png, then exit</span></code></pre>
+					</foh-copy>
+				</div>
+			</li>
+
+			<li>
+				<h3 class="steps__title">Match the house style</h3>
+				<div class="steps__body">
+					<p>
+						The style is the Eclipse formatter profile in <code>formatter/java.xml</code>: tabs at
+						width 4, braces on their own line, comments wrapped at 80 columns. It is
+						<strong>enforced, not suggested</strong> — the formatter's validate goal runs in the
+						<code>validate</code> phase, so any build fails on an unformatted file, including
+						<code>mvn test</code>.
+					</p>
+					<foh-copy>
+<pre><code><span class="prompt">$ </span>mvn formatter:format   <span class="comment"># apply it, then commit</span></code></pre>
+					</foh-copy>
+					<div class="callout callout--amber">
+						<p class="callout__title">One quirk that will bite you</p>
+						<p>
+							The profile sets <code>join_line_comments=false</code>, so the formatter
+							<em>splits</em> an over-long <code>//</code> line but never rejoins the remainder. Keep
+							<code>//</code> lines inside 80 columns yourself — counting the tab indent — and put a
+							long comment on its own line above the statement rather than trailing it.
+						</p>
+					</div>
+				</div>
+			</li>
+
+			<li>
+				<h3 class="steps__title">Test what you can test</h3>
+				<div class="steps__body">
+					<p>
+						<code>EngineTest</code>, <code>SignalStateTest</code>, <code>AudioDspTest</code> and
+						<code>SettingsTest</code> cover the band maths, note naming, formatting, simulation,
+						averaging, smoothing, peak hold, the spectral logic and the settings store. If your
+						change touches any of that, it needs a test.
+					</p>
+					<p>
+						The JavaFX controls have no unit tests and that is deliberate — they are trivial and
+						the harness would cost more than it caught. Nobody will ask you to add one.
+					</p>
+					<foh-copy>
+<pre><code><span class="prompt">$ </span>mvn test</code></pre>
+					</foh-copy>
+				</div>
+			</li>
+
+			<li>
+				<h3 class="steps__title">Open the pull request</h3>
+				<div class="steps__body">
+					<p>
+						One change per PR, and say what a reviewer should look at. If it is visible, attach a
+						screenshot — <code>PROBE=true mvn javafx:run</code> will take one for you. CI runs the
+						tests, the format check and a full package on every push, so you will know within a
+						few minutes whether it holds.
+					</p>
+					<p>
+						Draft PRs are welcome, and so is asking first. An issue that says "I am thinking of
+						doing X, is that wanted?" saves everyone an afternoon.
+					</p>
+				</div>
+			</li>
+		</ol>
+	</div>
+</section>
+
+<!-- ===================== what needs doing ===================== -->
+<section class="section section--ruled" id="ideas">
+	<div class="container">
+		<p class="sec-title sec-title--amber">What needs doing</p>
+		<h2>Pick something that suits you</h2>
+		<p class="mt-4 lead measure">
+			Roughly ordered by how self-contained they are. None of these are assigned to anyone, and
+			the <a href="https://github.com/d135-1r43/fohanalyzer/issues">issue tracker</a> is short
+			enough to read in a minute — open an issue saying which one you are taking, so two people do
+			not build the same thing.
+		</p>
+
+		<div class="mt-7 grid grid--wide">
+
+			<foh-reveal>
+			<article class="acc-amber card" id="platforms">
+				<div class="card__head">
+					<span class="card__dot"></span>
+					<h3 class="card__title">Windows and Linux packaging</h3>
+				</div>
+				<div class="card__body">
+					<p>
+						The application code is plain JavaFX and Java Sound — nothing in it is macOS-specific.
+						What is macOS-specific is <code>scripts/package-mac.sh</code>: the microphone usage
+						description in <code>Info.plist</code>, the ad-hoc re-signing, and the <code>.dmg</code>.
+					</p>
+					<p>
+						An equivalent <code>jpackage</code> invocation producing an <code>.msi</code> or an
+						AppImage, plus a CI job to run it, would put the app on two more platforms. The module
+						list is already worked out and documented — including the two easy to miss,
+						<code>java.desktop</code> for audio capture and <code>java.prefs</code> for settings.
+					</p>
+					<p class="mut">Clear finish line · no DSP knowledge needed · high impact</p>
+				</div>
+			</article>
+			</foh-reveal>
+
+			<foh-reveal delay="60">
+			<article class="acc-lime card" id="dsp">
+				<div class="card__head">
+					<span class="card__dot"></span>
+					<h3 class="card__title">Sharper measurement</h3>
+				</div>
+				<div class="card__body">
+					<p>
+						A- and C-weighting for the SPL readout. Coherence, so you know when to believe the
+						transfer function. Phase. A proper dual-FFT transfer function with delay finding.
+						Impulse response and RT60.
+					</p>
+					<p>
+						All of it lands in <code>dsp</code> and <code>engine</code>, which are pure functions
+						with no JavaFX anywhere near them — you can write the test first and never open the UI.
+					</p>
+					<p class="mut">Testable in isolation · pick one, not all five</p>
+				</div>
+			</article>
+			</foh-reveal>
+
+			<foh-reveal delay="120">
+			<article class="acc-cyan card" id="design">
+				<div class="card__head">
+					<span class="card__dot"></span>
+					<h3 class="card__title">Interface and workflow</h3>
+				</div>
+				<div class="card__body">
+					<p>
+						The control rail is ordered by how often a hand reaches for something mid-show, and
+						everything decided once at patch time lives in a separate <em>Preferences</em> window
+						so it is not competing for the column you read during a show.
+					</p>
+					<p>
+						That ordering is a judgement call made by one set of hands. If it is wrong for how you
+						work — or if something you need mid-show is two clicks deep — say so. Keyboard
+						shortcuts, a full-screen plot mode and a dark-stage brightness mode are all open.
+					</p>
+					<p class="mut">No Java required to file this · experience is the qualification</p>
+				</div>
+			</article>
+			</foh-reveal>
+
+			<foh-reveal>
+			<article class="acc-red card">
+				<div class="card__head">
+					<span class="card__dot"></span>
+					<h3 class="card__title">Hardware coverage</h3>
+				</div>
+				<div class="card__body">
+					<p>
+						Devices are enumerated once at launch; there is no hot-plug notification, so plugging
+						an interface in after the app is running does not show it. Fixing that properly means
+						watching for device changes on each platform.
+					</p>
+					<p>
+						Smaller and just as welcome: channel-count edge cases, sample-rate mismatches, and
+						interfaces whose names come through mangled.
+					</p>
+					<p class="mut">Needs hardware · needs patience</p>
+				</div>
+			</article>
+			</foh-reveal>
+
+			<foh-reveal delay="60">
+			<article class="acc-mid card" id="docs">
+				<div class="card__head">
+					<span class="card__dot"></span>
+					<h3 class="card__title">Documentation and translation</h3>
+				</div>
+				<div class="card__body">
+					<p>
+						A short practical guide — ringing out a wedge, setting an SPL calibration against a
+						hand-held meter, reading a transfer function — would help more working engineers than
+						most features would.
+					</p>
+					<p>
+						The interface is English-only. It is a small string set, and the app is used by people
+						who do not work in English.
+					</p>
+					<p class="mut">Good first contribution · no build needed for prose</p>
+				</div>
+			</article>
+			</foh-reveal>
+
+			<foh-reveal delay="120">
+			<article class="acc-mut card">
+				<div class="card__head">
+					<span class="card__dot"></span>
+					<h3 class="card__title">Signing and notarisation</h3>
+				</div>
+				<div class="card__body">
+					<p>
+						The bundle is ad-hoc signed, not notarised, so Gatekeeper refuses the first launch on
+						another Mac and users have to right-click → <em>Open</em>. A Developer ID signature and
+						a notarisation step in CI would remove that, for everyone, permanently.
+					</p>
+					<p>
+						This one needs an Apple Developer account as much as it needs code, so it is as much a
+						question of who can help as how.
+					</p>
+					<p class="mut">Blocked on access, not difficulty</p>
+				</div>
+			</article>
+			</foh-reveal>
+
+		</div>
+	</div>
+</section>
+
+<!-- ===================== ground rules ===================== -->
+<section class="section section--ruled" id="rules">
+	<div class="container container--narrow">
+		<p class="sec-title">Ground rules</p>
+		<h2>What to expect</h2>
+
+		<div class="grid--sm mt-6 grid">
+			<div class="callout callout--lime">
+				<p class="callout__title">Your work stays yours, and stays free</p>
+				<p>
+					Contributions are accepted under <strong>GPL-3.0-or-later</strong>, the project's own
+					licence. There is no copyright assignment and no CLA. Nobody can take what you write
+					here and close it.
+				</p>
+			</div>
+
+			<div class="callout">
+				<p class="callout__title">Reviews are about the code</p>
+				<p>
+					Expect direct feedback on the change and nothing else. Be the same way in return.
+					Anyone who cannot manage that will be shown out — a small project has no room for it.
+				</p>
+			</div>
+
+			<div class="callout callout--amber">
+				<p class="callout__title">Not everything gets merged</p>
+				<p>
+					This is a focused tool, and a feature that is right for a different application is
+					still wrong for this one. Asking in an issue before building something large is the
+					way to find out cheaply.
+				</p>
+			</div>
+
+			<div class="callout">
+				<p class="callout__title">It may take a few days</p>
+				<p>
+					This is a spare-time project. A quiet week is a quiet week, not a verdict on your
+					patch — nudge the thread if it goes silent.
+				</p>
+			</div>
+		</div>
+	</div>
+</section>
+
+<!-- ===================== cta ===================== -->
+<section class="section--tight">
+	<div class="container">
+		<div class="cta">
+			<h2 class="cta__title">Still reading?</h2>
+			<p class="cta__text">
+				Then you are exactly the person this page is for. Take the smallest thing on it — a typo,
+				a device report, a question — and start there.
+			</p>
+			<div class="btn-row btn-row--center">
+				<a class="btn btn--lg btn--lime" href="https://github.com/d135-1r43/fohanalyzer/issues/new">Open an issue</a>
+				<a class="btn btn--lg" href="https://github.com/d135-1r43/fohanalyzer/fork">Fork the repo</a>
+			</div>
+		</div>
+	</div>
+</section>
+
+</main>
+
+<!-- ===================== footer ===================== -->
+<footer class="site-footer">
+	<div class="container">
+		<div class="site-footer__grid">
+			<div class="site-footer__brand">
+				<a class="brand" href="./">
+					<img src="assets/img/logo.svg" width="34" height="34" alt="">
+					<span class="brand__marks">
+						<span class="brand__name">FOHanalyzer</span>
+						<span class="brand__sub">Dual Spectrum · RTA</span>
+					</span>
+				</a>
+				<p class="site-footer__blurb">
+					A dual-channel real-time analyser for front-of-house engineers. Built in the open,
+					because the people who need it are the people who can improve it.
+				</p>
+			</div>
+
+			<nav class="site-footer__nav" aria-label="Product">
+				<p class="sec-title">Product</p>
+				<ul>
+					<li><a href="./#features">Features</a></li>
+					<li><a href="./#internals">How it works</a></li>
+					<li><a href="https://github.com/d135-1r43/fohanalyzer/releases/latest">Download</a></li>
+					<li><a href="https://github.com/d135-1r43/fohanalyzer#install">Install notes</a></li>
+				</ul>
+			</nav>
+
+			<nav class="site-footer__nav" aria-label="Project">
+				<p class="sec-title">Project</p>
+				<ul>
+					<li><a href="contribute.html">Contribute</a></li>
+					<li><a href="https://github.com/d135-1r43/fohanalyzer">Source code</a></li>
+					<li><a href="https://github.com/d135-1r43/fohanalyzer/issues">Issue tracker</a></li>
+					<li><a href="https://github.com/d135-1r43/fohanalyzer-website">Website source</a></li>
+				</ul>
+			</nav>
+
+			<nav class="site-footer__nav" aria-label="Legal">
+				<p class="sec-title">Legal</p>
+				<ul>
+					<li><a href="impressum.html">Impressum</a></li>
+					<li><a href="https://github.com/d135-1r43/fohanalyzer/blob/master/LICENSE">GPL-3.0-or-later</a></li>
+					<li><a href="https://www.gnu.org/philosophy/free-sw.html">What free software means</a></li>
+					<li><a href="https://openfontlicense.org">SIL OFL 1.1 (fonts)</a></li>
+				</ul>
+			</nav>
+		</div>
+
+		<div class="mt-7 band band--rule" aria-hidden="true">
+			<div class="band__sub"></div><div class="band__bass"></div>
+			<div class="band__low-mid"></div><div class="band__mid"></div>
+			<div class="band__upper-mid"></div><div class="band__presence"></div>
+			<div class="band__air"></div>
+		</div>
+
+		<p class="site-footer__legal">
+			FOHanalyzer is free software under <a href="https://github.com/d135-1r43/fohanalyzer/blob/master/LICENSE">GPL-3.0-or-later</a>, and comes with absolutely no warranty.<br>
+			Developed and maintained by <a href="https://herhoffer.net">Markus Herhoffer</a> · <a href="impressum.html">Impressum</a><br>
+			Set in <a href="https://github.com/carrois/Barlow">Barlow</a> and <a href="https://github.com/IBM/plex">IBM Plex Mono</a>, both under the SIL Open Font License 1.1, self-hosted.<br>
+			This site sets no cookies and profiles nobody; visits are counted by a self-hosted, cookieless Plausible instance.
+		</p>
+	</div>
+</footer>
+
+</body>
+</html>

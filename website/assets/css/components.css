@@ -1,0 +1,1201 @@
+/* ---------------------------------------------------------------------------
+   Components — the reusable pieces the pages are assembled from.
+
+   Naming follows BEM: .block, .block__element, .block--modifier. Every block
+   here is self-contained (no descendant selectors reaching outside itself)
+   and takes its colours from tokens.css only, so a block can be moved to a
+   new page or a new context without carrying rules along with it.
+
+   Where a block mirrors something in the app, the app's class name is noted
+   so the two can be compared.
+   --------------------------------------------------------------------------- */
+
+/* ===========================================================================
+   skip-link — the first thing in the tab order on every page.
+   =========================================================================== */
+
+.skip-link {
+	position: absolute;
+	top: var(--sp-2);
+	left: var(--sp-2);
+	z-index: 100;
+	padding: var(--sp-2) var(--sp-4);
+	background-color: var(--panel);
+	border: 1px solid var(--cyan-edge);
+	border-radius: var(--r-md);
+	color: var(--cyan);
+	text-decoration: none;
+	font-weight: 700;
+	/* Off-screen until focused, rather than display:none, so it stays
+	   focusable. */
+	transform: translateY(-200%);
+	transition: transform var(--dur) var(--ease);
+}
+
+.skip-link:focus {
+	transform: translateY(0);
+}
+
+/* ===========================================================================
+   sec-title — the mono micro heading. The app's .sec-title, on the rail.
+   =========================================================================== */
+
+.sec-title {
+	font-family: var(--font-mono);
+	font-size: var(--fs-micro);
+	font-weight: 700;
+	letter-spacing: var(--tracking-micro);
+	text-transform: uppercase;
+	color: var(--txt-mut);
+	margin-bottom: var(--sp-3);
+}
+
+.sec-title--cyan {
+	color: var(--cyan);
+}
+
+.sec-title--lime {
+	color: var(--lime);
+}
+
+.sec-title--amber {
+	color: var(--amber);
+}
+
+/* ===========================================================================
+   chip — the app's .ver-chip: a mono badge in an accent, on a wash of itself.
+   Set --chip-color to recolour; lime is the default, as in the header.
+   =========================================================================== */
+
+.chip {
+	--chip-color: var(--lime);
+	display: inline-flex;
+	align-items: center;
+	gap: var(--sp-2);
+	font-family: var(--font-mono);
+	font-size: var(--fs-xs);
+	font-weight: 700;
+	letter-spacing: 0.04em;
+	color: var(--chip-color);
+	background-color: color-mix(in srgb, var(--chip-color) 8%, transparent);
+	border: 1px solid color-mix(in srgb, var(--chip-color) 35%, transparent);
+	border-radius: var(--r-sm);
+	padding: var(--sp-1) 0.45rem;
+	white-space: nowrap;
+}
+
+.chip--cyan {
+	--chip-color: var(--cyan);
+}
+
+.chip--amber {
+	--chip-color: var(--amber);
+}
+
+.chip--neutral {
+	--chip-color: var(--txt-mut);
+}
+
+/* The pill form — the app's .marker-pill, on the source cards. */
+.chip--pill {
+	border-radius: var(--r-pill);
+	padding: var(--sp-1) 0.6rem;
+	text-transform: uppercase;
+	letter-spacing: var(--tracking-micro);
+	font-size: var(--fs-micro);
+}
+
+/* A live dot, as in the header's LIVE indicator. */
+.chip__dot {
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	background-color: currentColor;
+	flex: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+	.chip__dot--pulse {
+		animation: chip-pulse 2.4s var(--ease) infinite;
+	}
+}
+
+@keyframes chip-pulse {
+	0%,
+	100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.35;
+	}
+}
+
+/* ===========================================================================
+   btn — the app's .btn family. Accent-driven, so one rule set covers all
+   four variants; set --btn-color to add another.
+   =========================================================================== */
+
+.btn {
+	--btn-color: var(--txt-dim);
+	--btn-bg: #131b25;
+	--btn-edge: var(--line);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: var(--sp-2);
+	font-size: var(--fs-body);
+	font-weight: 700;
+	line-height: 1.2;
+	text-align: center;
+	text-decoration: none;
+	color: var(--btn-color);
+	background-color: var(--btn-bg);
+	border: 1px solid var(--btn-edge);
+	border-radius: var(--r-lg);
+	padding: 0.8rem 1.4rem;
+	cursor: pointer;
+	transition: border-color var(--dur-fast) var(--ease),
+		background-color var(--dur-fast) var(--ease),
+		transform var(--dur-fast) var(--ease);
+}
+
+.btn:hover {
+	border-color: color-mix(in srgb, var(--btn-color) 65%, transparent);
+	background-color: color-mix(in srgb, var(--btn-color) 14%, var(--btn-bg));
+	text-decoration: none;
+}
+
+.btn:active {
+	transform: translateY(1px);
+}
+
+/* .btn-capture — the primary action. */
+.btn--cyan {
+	--btn-color: var(--cyan);
+	--btn-bg: var(--cyan-wash);
+	--btn-edge: var(--cyan-edge);
+}
+
+/* .btn-detect — used here for anything "join in". */
+.btn--lime {
+	--btn-color: var(--lime);
+	--btn-bg: var(--lime-wash);
+	--btn-edge: var(--lime-edge);
+}
+
+.btn--amber {
+	--btn-color: var(--amber);
+	--btn-bg: var(--amber-wash);
+	--btn-edge: var(--amber-edge);
+}
+
+/* .btn-clear — the neutral default, already the base state. */
+.btn--ghost {
+	--btn-bg: transparent;
+}
+
+.btn--lg {
+	font-size: var(--fs-body-lg);
+	padding: 0.95rem 1.75rem;
+}
+
+/* The app's .mini-btn. */
+.btn--mini {
+	font-family: var(--font-mono);
+	font-size: var(--fs-xs);
+	font-weight: 400;
+	padding: var(--sp-1) var(--sp-3);
+	border-radius: var(--r-sm);
+}
+
+.btn__icon {
+	flex: none;
+	width: 1.05em;
+	height: 1.05em;
+	stroke: currentColor;
+	fill: none;
+	stroke-width: 2;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+
+/* A row of buttons that wraps and centres cleanly. */
+.btn-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--sp-3);
+	align-items: center;
+}
+
+.btn-row--center {
+	justify-content: center;
+}
+
+/* ===========================================================================
+   card — the app's .src-card: a panel with a hairline and generous padding.
+   The base is static; --link makes the whole card an interactive target.
+   =========================================================================== */
+
+/* No height:100% here. Cards in a .grid row already match heights, because a
+   grid item stretches by default — and <foh-reveal> passes that through by
+   being a grid itself. Forcing 100% instead made a card fill whatever row it
+   sat in, which is wrong in a .split, where it stretched to match a much
+   taller text column and left the panel half empty. */
+.card {
+	background-color: var(--panel-2);
+	border: 1px solid var(--line-soft);
+	border-radius: var(--r-xl);
+	padding: var(--sp-5);
+}
+
+.card__head {
+	display: flex;
+	align-items: center;
+	gap: var(--sp-3);
+	margin-bottom: var(--sp-3);
+}
+
+.card__title {
+	font-size: 1.05rem;
+	font-weight: 700;
+	color: var(--txt);
+	line-height: 1.3;
+}
+
+.card__body {
+	color: var(--txt-dim);
+	font-size: var(--fs-sm);
+	line-height: var(--lh-body);
+}
+
+.card__body > * + * {
+	margin-top: var(--sp-3);
+}
+
+/* An accent dot, as the source cards carry for their trace colour. Set
+   --accent on the card to colour it. */
+.card__dot {
+	width: 9px;
+	height: 9px;
+	border-radius: 50%;
+	background-color: var(--accent, var(--txt-mut));
+	flex: none;
+	box-shadow: 0 0 12px color-mix(in srgb, var(--accent, transparent) 70%, transparent);
+}
+
+/* A card that is a link. The <a> is placed inside and stretched over the
+   card, so the heading text stays the accessible name and the whole surface
+   is still clickable. */
+.card--link {
+	position: relative;
+	transition: border-color var(--dur) var(--ease),
+		background-color var(--dur) var(--ease),
+		transform var(--dur) var(--ease);
+}
+
+.card--link:hover {
+	border-color: color-mix(in srgb, var(--accent, var(--cyan)) 45%, transparent);
+	background-color: var(--panel);
+	transform: translateY(-2px);
+}
+
+.card--link:has(a:focus-visible) {
+	box-shadow: var(--focus-ring);
+}
+
+.card__link {
+	text-decoration: none;
+	color: inherit;
+}
+
+.card__link::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	border-radius: inherit;
+}
+
+.card__link:focus-visible {
+	box-shadow: none;
+}
+
+/* The trailing arrow on a link card. */
+.card__more {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--sp-2);
+	margin-top: var(--sp-4);
+	font-family: var(--font-mono);
+	font-size: var(--fs-xs);
+	letter-spacing: 0.04em;
+	color: var(--accent, var(--cyan));
+}
+
+.card--link:hover .card__more {
+	gap: var(--sp-3);
+}
+
+.card__more span {
+	transition: transform var(--dur) var(--ease);
+}
+
+/* ===========================================================================
+   grid — the one layout block. Set --min to change the column floor.
+   =========================================================================== */
+
+.grid {
+	display: grid;
+	gap: var(--sp-4);
+	grid-template-columns: repeat(auto-fit, minmax(min(var(--min, 260px), 100%), 1fr));
+}
+
+.grid--wide {
+	--min: 320px;
+	gap: var(--sp-5);
+}
+
+/* Denser columns, for readouts and short callouts. */
+.grid--sm {
+	--min: 220px;
+}
+
+/* A fixed two-column split that stacks below the breakpoint.
+ *
+ * Columns align to the top by default. Centring was the original default and
+ * it was the wrong one: most splits here pair a text column with a shorter
+ * panel, where centring leaves the panel floating and stretches any .card
+ * inside it to a height its content does not fill. It is also a trap — a
+ * `.align-start` utility in base.css cannot override this, because base.css
+ * loads first and the two selectors weigh the same. Opt into centring with
+ * .split--center where a column genuinely wants it. */
+.split {
+	display: grid;
+	gap: var(--sp-7);
+	align-items: start;
+}
+
+.split--center {
+	align-items: center;
+}
+
+@media (min-width: 900px) {
+	.split {
+		grid-template-columns: 1fr 1fr;
+		gap: var(--sp-8);
+	}
+
+	.split--wide-first {
+		grid-template-columns: 1.15fr 0.85fr;
+	}
+}
+
+/* ===========================================================================
+   readout — the header's .readout: a mono key over a big mono value.
+   =========================================================================== */
+
+.readout {
+	background-color: var(--panel);
+	border: 1px solid var(--line-soft);
+	border-radius: var(--r-md);
+	padding: var(--sp-3) 0.8rem;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	min-width: 0;
+}
+
+.readout__label {
+	font-family: var(--font-mono);
+	font-size: var(--fs-micro);
+	letter-spacing: var(--tracking-micro);
+	text-transform: uppercase;
+	color: var(--txt-mut);
+}
+
+.readout__value {
+	font-family: var(--font-mono);
+	font-size: 1.35rem;
+	font-weight: 700;
+	color: var(--readout-color, var(--txt));
+	line-height: 1.2;
+	font-variant-numeric: tabular-nums;
+}
+
+.readout__value small {
+	font-size: 0.6em;
+	font-weight: 400;
+	color: var(--txt-mut);
+	margin-left: 0.25em;
+}
+
+.readout--cyan {
+	--readout-color: var(--cyan);
+}
+
+.readout--amber {
+	--readout-color: var(--amber);
+}
+
+.readout--lime {
+	--readout-color: var(--lime);
+	border-color: var(--lime-edge);
+}
+
+/* ===========================================================================
+   band — the frequency-zone strip under the app's plot. Used here as a
+   section rule that carries the product's signature into the page.
+   =========================================================================== */
+
+.band {
+	display: flex;
+	height: 3px;
+	border-radius: var(--r-pill);
+	overflow: hidden;
+}
+
+.band > * {
+	flex: 1;
+}
+
+/* Widths roughly track the log-frequency spans of Engine.ZONES. */
+.band__sub {
+	background-color: var(--zone-sub);
+	flex: 0.7;
+}
+.band__bass {
+	background-color: var(--zone-bass);
+	flex: 1.3;
+}
+.band__low-mid {
+	background-color: var(--zone-low-mid);
+	flex: 1;
+}
+.band__mid {
+	background-color: var(--zone-mid);
+	flex: 1.6;
+}
+.band__upper-mid {
+	background-color: var(--zone-upper-mid);
+	flex: 0.8;
+}
+.band__presence {
+	background-color: var(--zone-presence);
+	flex: 0.8;
+}
+.band__air {
+	background-color: var(--zone-air);
+	flex: 1.1;
+}
+
+/* Faded at the ends, for use as a divider rather than a legend. */
+.band--rule {
+	mask-image: linear-gradient(to right, transparent, #000 18%, #000 82%, transparent);
+	opacity: 0.55;
+}
+
+/* ===========================================================================
+   site-header — the app's .header: gradient strip, hairline, 74px tall.
+   =========================================================================== */
+
+.site-header {
+	position: sticky;
+	top: 0;
+	z-index: 50;
+	min-height: var(--header-h);
+	background-color: rgba(11, 16, 24, 0.82);
+	backdrop-filter: blur(12px);
+	-webkit-backdrop-filter: blur(12px);
+	border-bottom: 1px solid var(--line);
+}
+
+/* No blur support: fall back to the app's opaque gradient. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+	.site-header {
+		background: var(--grad-header);
+	}
+}
+
+.site-header__inner {
+	min-height: var(--header-h);
+	display: flex;
+	align-items: center;
+	gap: var(--sp-5);
+}
+
+/* -- brand ---------------------------------------------------------------- */
+
+.brand {
+	display: flex;
+	align-items: center;
+	gap: var(--sp-3);
+	text-decoration: none;
+	color: inherit;
+	flex: none;
+}
+
+.brand__marks {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+}
+
+.brand__name {
+	font-size: 1.25rem;
+	font-weight: 700;
+	line-height: 1.1;
+	letter-spacing: -0.01em;
+	color: var(--txt);
+}
+
+/* The app's .wm-sub, under the wordmark. */
+.brand__sub {
+	font-size: var(--fs-micro);
+	letter-spacing: var(--tracking-micro);
+	text-transform: uppercase;
+	color: var(--txt-mut);
+	line-height: 1.4;
+}
+
+/* -- nav ------------------------------------------------------------------ */
+
+.nav {
+	display: flex;
+	align-items: center;
+	gap: var(--sp-5);
+	margin-left: auto;
+}
+
+.nav__list {
+	display: flex;
+	align-items: center;
+	gap: var(--sp-5);
+	list-style: none;
+	padding: 0;
+	margin: 0;
+}
+
+.nav__list li + li {
+	margin-top: 0;
+}
+
+.nav__link {
+	font-size: var(--fs-sm);
+	color: var(--txt-dim);
+	text-decoration: none;
+	white-space: nowrap;
+	transition: color var(--dur-fast) var(--ease);
+}
+
+.nav__link:hover {
+	color: var(--txt);
+}
+
+.nav__link[aria-current="page"] {
+	color: var(--txt);
+	font-weight: 700;
+}
+
+/* Below this width the links would crowd the wordmark; the primary action
+   stays, the rest move to the footer, which repeats every destination. */
+@media (max-width: 720px) {
+	.nav__list {
+		display: none;
+	}
+}
+
+/* ===========================================================================
+   hero
+   =========================================================================== */
+
+.hero {
+	position: relative;
+	padding-block: clamp(3rem, 1.5rem + 7vw, 6.5rem) var(--sp-8);
+	overflow: hidden;
+}
+
+/* The glow behind the hero — a wide, very soft cyan/lime wash, the same two
+   colours the app's traces use. Decorative only. */
+.hero__glow {
+	position: absolute;
+	top: -40%;
+	left: 50%;
+	transform: translateX(-50%);
+	width: min(1400px, 160vw);
+	aspect-ratio: 2 / 1;
+	pointer-events: none;
+	background:
+		radial-gradient(ellipse at 38% 55%, rgba(34, 211, 238, 0.14), transparent 60%),
+		radial-gradient(ellipse at 66% 45%, rgba(163, 230, 53, 0.10), transparent 58%);
+	filter: blur(20px);
+	z-index: 0;
+}
+
+.hero__inner {
+	position: relative;
+	z-index: 1;
+}
+
+.hero__title {
+	margin-top: var(--sp-5);
+}
+
+/* The gradient runs cyan → lime → amber: mic trace, SPL, solo bus. */
+.hero__accent {
+	background: linear-gradient(100deg, var(--cyan), var(--lime) 55%, var(--amber));
+	-webkit-background-clip: text;
+	background-clip: text;
+	color: transparent;
+}
+
+.hero__lead {
+	font-size: clamp(1.05rem, 0.95rem + 0.5vw, 1.3rem);
+	color: var(--txt-dim);
+	margin-top: var(--sp-5);
+	max-width: 60ch;
+}
+
+.hero__actions {
+	margin-top: var(--sp-6);
+}
+
+/* The mono line under the buttons — licence, platform, price. */
+.hero__meta {
+	margin-top: var(--sp-5);
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--sp-2) var(--sp-4);
+	font-family: var(--font-mono);
+	font-size: var(--fs-xs);
+	color: var(--txt-mut);
+}
+
+.hero__meta span {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--sp-2);
+}
+
+/* The separators are generated rather than written into the markup, so one
+   can never be left dangling at the end of a wrapped line — each belongs to
+   the item that follows it and wraps with it. */
+.hero__meta span + span::before {
+	content: "·";
+	color: var(--txt-faint);
+}
+
+/* -- the readout strip, as in the app header -- */
+
+.hero__readouts {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--sp-3);
+	margin-top: var(--sp-6);
+}
+
+.hero__readouts .readout {
+	flex: 1 1 8rem;
+}
+
+/* ===========================================================================
+   shot — a screenshot presented as the app window it came from.
+   =========================================================================== */
+
+.shot {
+	position: relative;
+	border: 1px solid var(--line);
+	border-radius: var(--r-xl);
+	overflow: hidden;
+	background-color: var(--panel);
+	box-shadow: var(--shadow-lg);
+}
+
+.shot__img {
+	width: 100%;
+	display: block;
+}
+
+.shot--float {
+	/* Lifts the hero screenshot over the fold edge. */
+	margin-top: var(--sp-7);
+}
+
+.shot__caption {
+	font-family: var(--font-mono);
+	font-size: var(--fs-xs);
+	color: var(--txt-mut);
+	text-align: center;
+	margin-top: var(--sp-3);
+}
+
+/* ===========================================================================
+   feature — an icon-led point. Lighter than a card, for dense lists.
+   =========================================================================== */
+
+.feature__icon {
+	width: 34px;
+	height: 34px;
+	border-radius: var(--r-md);
+	display: grid;
+	place-items: center;
+	background-color: color-mix(in srgb, var(--accent, var(--cyan)) 10%, transparent);
+	border: 1px solid color-mix(in srgb, var(--accent, var(--cyan)) 30%, transparent);
+	color: var(--accent, var(--cyan));
+	margin-bottom: var(--sp-4);
+	flex: none;
+}
+
+.feature__icon svg {
+	width: 17px;
+	height: 17px;
+	stroke: currentColor;
+	fill: none;
+	stroke-width: 1.9;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+
+.feature__title {
+	font-size: 1.05rem;
+	font-weight: 700;
+	margin-bottom: var(--sp-2);
+}
+
+.feature__text {
+	color: var(--txt-dim);
+	font-size: var(--fs-sm);
+}
+
+/* ===========================================================================
+   callout — a panel that carries an accent edge. Used for the licence note
+   and the "why contribute" pitch.
+   =========================================================================== */
+
+.callout {
+	--accent: var(--cyan);
+	position: relative;
+	background-color: var(--panel);
+	border: 1px solid var(--line-soft);
+	border-left: 2px solid var(--accent);
+	border-radius: var(--r-lg);
+	padding: var(--sp-5);
+	color: var(--txt-dim);
+	font-size: var(--fs-sm);
+}
+
+.callout--lime {
+	--accent: var(--lime);
+}
+
+.callout--amber {
+	--accent: var(--amber);
+}
+
+.callout__title {
+	color: var(--txt);
+	font-weight: 700;
+	font-size: var(--fs-body);
+	margin-bottom: var(--sp-2);
+}
+
+/* ===========================================================================
+   steps — an ordered contributor walk-through.
+   =========================================================================== */
+
+.steps {
+	list-style: none;
+	padding: 0;
+	counter-reset: step;
+	display: grid;
+	gap: var(--sp-6);
+	/* Slightly wider than --measure: the prose wants 68ch, but the command
+	   blocks in these steps need a little more before they start wrapping. */
+	max-width: 78ch;
+}
+
+.steps > li {
+	counter-increment: step;
+	position: relative;
+	padding-left: 3.25rem;
+	margin-top: 0;
+}
+
+.steps > li::before {
+	content: counter(step, decimal-leading-zero);
+	position: absolute;
+	left: 0;
+	top: 0;
+	width: 2.25rem;
+	height: 2.25rem;
+	display: grid;
+	place-items: center;
+	font-family: var(--font-mono);
+	font-size: var(--fs-xs);
+	font-weight: 700;
+	color: var(--cyan);
+	background-color: var(--cyan-wash);
+	border: 1px solid var(--cyan-edge);
+	border-radius: var(--r-md);
+}
+
+.steps__title {
+	font-size: 1.05rem;
+	font-weight: 700;
+	margin-bottom: var(--sp-2);
+	padding-top: 0.3rem;
+}
+
+.steps__body {
+	color: var(--txt-dim);
+	font-size: var(--fs-sm);
+}
+
+.steps__body > * + * {
+	margin-top: var(--sp-3);
+}
+
+/* ===========================================================================
+   codeblock — a <pre> with a copy button and an optional caption bar.
+   The button is added by assets/js/components.js; with no JS the block is a
+   plain, fully usable code listing.
+   =========================================================================== */
+
+.codeblock {
+	position: relative;
+}
+
+.codeblock__copy {
+	position: absolute;
+	top: var(--sp-3);
+	right: var(--sp-3);
+	opacity: 0;
+	transition: opacity var(--dur) var(--ease), border-color var(--dur-fast) var(--ease);
+}
+
+.codeblock:hover .codeblock__copy,
+.codeblock__copy:focus-visible {
+	opacity: 1;
+}
+
+/* Touch has no hover; always show it there. */
+@media (hover: none) {
+	.codeblock__copy {
+		opacity: 1;
+	}
+}
+
+/* ===========================================================================
+   deflist — a two-column reference table that collapses to rows on narrow
+   screens. Used for the module map and the dependency licences.
+   =========================================================================== */
+
+.deflist {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: var(--fs-sm);
+	text-align: left;
+}
+
+.deflist th,
+.deflist td {
+	padding: var(--sp-3) var(--sp-4);
+	border-bottom: 1px solid var(--line-soft);
+	vertical-align: baseline;
+}
+
+.deflist thead th {
+	font-family: var(--font-mono);
+	font-size: var(--fs-micro);
+	font-weight: 700;
+	letter-spacing: var(--tracking-micro);
+	text-transform: uppercase;
+	color: var(--txt-mut);
+	border-bottom-color: var(--line);
+}
+
+.deflist tbody th {
+	font-family: var(--font-mono);
+	font-weight: 400;
+	color: var(--txt);
+	white-space: nowrap;
+}
+
+.deflist td {
+	color: var(--txt-dim);
+}
+
+.deflist tbody tr:last-child th,
+.deflist tbody tr:last-child td {
+	border-bottom: 0;
+}
+
+/* The table scrolls inside its own box rather than widening the page. */
+.table-wrap {
+	overflow-x: auto;
+	border: 1px solid var(--line-soft);
+	border-radius: var(--r-lg);
+	background-color: var(--panel-2);
+}
+
+/* ===========================================================================
+   prose — long-form body copy with its own heading rhythm. The Impressum is
+   the only user of this so far; anything text-heavy and legal-ish belongs
+   here rather than growing another block.
+   =========================================================================== */
+
+.prose {
+	max-width: var(--measure);
+	color: var(--txt-dim);
+}
+
+.prose h2 {
+	font-size: var(--fs-h3);
+	color: var(--txt);
+	margin-top: var(--sp-7);
+	margin-bottom: var(--sp-3);
+	letter-spacing: -0.01em;
+}
+
+.prose > h2:first-child {
+	margin-top: 0;
+}
+
+.prose p + p,
+.prose address + p {
+	margin-top: var(--sp-3);
+}
+
+/* An address block: mono, because it is data rather than prose, which is the
+   same call the app makes for anything you read rather than skim. */
+.addr {
+	font-family: var(--font-mono);
+	font-size: var(--fs-sm);
+	font-style: normal;
+	line-height: 1.9;
+	color: var(--txt);
+	background-color: var(--panel-2);
+	border: 1px solid var(--line-soft);
+	border-left: 2px solid var(--cyan);
+	border-radius: var(--r-md);
+	padding: var(--sp-4) var(--sp-5);
+	/* Never let a long address widen the page on a narrow screen. */
+	overflow-wrap: anywhere;
+}
+
+/* ===========================================================================
+   person — the maintainer block. One name, what they do, where to find them.
+   =========================================================================== */
+
+.person__name {
+	font-size: 1.15rem;
+	font-weight: 700;
+	color: var(--txt);
+}
+
+.person__role {
+	font-family: var(--font-mono);
+	font-size: var(--fs-micro);
+	letter-spacing: var(--tracking-micro);
+	text-transform: uppercase;
+	color: var(--cyan);
+	margin-top: var(--sp-1);
+}
+
+.person__links {
+	list-style: none;
+	padding: 0;
+	margin-top: var(--sp-4);
+	display: grid;
+	gap: var(--sp-2);
+}
+
+.person__links li + li {
+	margin-top: 0;
+}
+
+.person__links a {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--sp-2);
+	font-family: var(--font-mono);
+	font-size: var(--fs-sm);
+	text-decoration: none;
+	color: var(--txt-dim);
+	overflow-wrap: anywhere;
+}
+
+.person__links a:hover {
+	color: var(--cyan);
+}
+
+.person__links svg {
+	flex: none;
+	width: 15px;
+	height: 15px;
+	stroke: currentColor;
+	fill: none;
+	stroke-width: 1.8;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+	color: var(--txt-mut);
+}
+
+/* ===========================================================================
+   cta — the closing panel on each page.
+   =========================================================================== */
+
+.cta {
+	background:
+		radial-gradient(ellipse at 50% 0%, rgba(163, 230, 53, 0.09), transparent 65%),
+		var(--panel);
+	border: 1px solid var(--line);
+	border-radius: var(--r-xl);
+	padding: clamp(var(--sp-6), 4vw, var(--sp-8)) var(--sp-5);
+	text-align: center;
+}
+
+.cta__title {
+	font-size: var(--fs-h2);
+	margin-bottom: var(--sp-4);
+}
+
+.cta__text {
+	color: var(--txt-dim);
+	max-width: 56ch;
+	margin-inline: auto;
+	margin-bottom: var(--sp-6);
+}
+
+/* Prose in the panel is centred; a command is not. Centred code reads as
+   decoration and cannot be scanned line by line. */
+.cta .codeblock,
+.cta foh-copy,
+.cta pre {
+	text-align: left;
+}
+
+.cta pre {
+	max-width: 60ch;
+	margin-inline: auto;
+}
+
+/* ===========================================================================
+   site-footer
+   =========================================================================== */
+
+.site-footer {
+	border-top: 1px solid var(--line);
+	background-color: var(--panel);
+	padding-block: var(--sp-7) var(--sp-6);
+	/* No margin-top: the last section already ends on its own padding, and
+	   adding one here stacks two full section gaps before the rule. */
+	margin-top: 0;
+}
+
+.site-footer__grid {
+	display: grid;
+	gap: var(--sp-6);
+	grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr));
+}
+
+.site-footer__brand {
+	max-width: 34ch;
+}
+
+.site-footer__blurb {
+	color: var(--txt-mut);
+	font-size: var(--fs-sm);
+	margin-top: var(--sp-4);
+}
+
+.site-footer__nav ul {
+	list-style: none;
+	padding: 0;
+	display: grid;
+	gap: var(--sp-2);
+}
+
+.site-footer__nav li + li {
+	margin-top: 0;
+}
+
+.site-footer__nav a {
+	color: var(--txt-dim);
+	text-decoration: none;
+	font-size: var(--fs-sm);
+}
+
+.site-footer__nav a:hover {
+	color: var(--txt);
+}
+
+/* The app's .rail-foot: the quietest line on the page. */
+.site-footer__legal {
+	margin-top: var(--sp-7);
+	padding-top: var(--sp-5);
+	border-top: 1px solid var(--line-soft);
+	font-family: var(--font-mono);
+	font-size: var(--fs-xs);
+	line-height: 1.9;
+	color: var(--txt-faint);
+}
+
+.site-footer__legal a {
+	color: var(--txt-mut);
+	text-decoration: none;
+}
+
+.site-footer__legal a:hover {
+	color: var(--txt-dim);
+	text-decoration: underline;
+}
+
+/* ===========================================================================
+   custom elements — see assets/js/components.js.
+
+   An unknown element is display:inline by default, which would mislay any
+   layout that wraps a card or a section in one. Declaring the box here, in
+   CSS, means the page is laid out correctly before the script runs and stays
+   correct if it never does. <foh-reveal> also animates opacity and transform,
+   which display:contents would have no box to apply.
+   =========================================================================== */
+
+foh-spectrum,
+foh-copy {
+	display: block;
+}
+
+/* A single-item grid rather than a block: as a grid item of .grid the reveal
+   stretches to the row height, and being a grid itself it hands that height
+   down to the card inside. That is what keeps cards in a row the same height
+   without .card having to claim height:100% and misbehave elsewhere. */
+foh-reveal {
+	display: grid;
+}
+
+/* The canvas <foh-spectrum> appends. Its height comes from the element's
+   height attribute, which the script hands over as --spectrum-h. */
+foh-spectrum canvas {
+	display: block;
+	width: 100%;
+	height: var(--spectrum-h, 180px);
+}
+
+/* ===========================================================================
+   reveal — a fade-and-lift as a block scrolls in, driven by
+   assets/js/components.js. The visible state is the default so that with no
+   JS, or with reduced motion, everything is simply shown.
+   =========================================================================== */
+
+@media (prefers-reduced-motion: no-preference) {
+	[data-reveal="pending"] {
+		opacity: 0;
+		transform: translateY(14px);
+	}
+
+	[data-reveal="shown"] {
+		opacity: 1;
+		transform: none;
+		transition: opacity var(--dur-slow) var(--ease),
+			transform var(--dur-slow) var(--ease);
+	}
+}

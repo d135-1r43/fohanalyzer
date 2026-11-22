@@ -54,6 +54,11 @@ class SettingsTest
 		first.showTransfer.set(true);
 		first.showSpl.set(true);
 		first.soloTrim.set(-12.5);
+		first.view.set(AppState.VIEW_SPLIT);
+		first.spectroSource.set(AppState.SPECTRO_DIFF);
+		first.spectroHistory.set(60);
+		first.spectroFloor.set(-95);
+		first.spectroCeiling.set(-20);
 
 		AppState next = new AppState();
 		new Settings(node).bind(next);
@@ -69,6 +74,31 @@ class SettingsTest
 		assertTrue(next.showTransfer.get());
 		assertTrue(next.showSpl.get());
 		assertEquals(-12.5, next.soloTrim.get(), 1e-9);
+		assertEquals(AppState.VIEW_SPLIT, next.view.get());
+		assertEquals(AppState.SPECTRO_DIFF, next.spectroSource.get());
+		assertEquals(60, next.spectroHistory.get());
+		assertEquals(-95, next.spectroFloor.get(), 1e-9);
+		assertEquals(-20, next.spectroCeiling.get(), 1e-9);
+	}
+
+	@Test
+	void spectrographValuesTheControlsCannotShowFallBackToDefaults()
+	{
+		node.putInt("view", 7);
+		node.putInt("spectroSource", -1);
+		node.putInt("spectroHistory", 45);
+		node.putDouble("spectroFloor", 10);
+		node.putDouble("spectroCeiling", -500);
+
+		AppState st = new AppState();
+		settings.bind(st);
+
+		AppState d = new AppState();
+		assertEquals(d.view.get(), st.view.get());
+		assertEquals(d.spectroSource.get(), st.spectroSource.get());
+		assertEquals(d.spectroHistory.get(), st.spectroHistory.get());
+		assertEquals(d.spectroFloor.get(), st.spectroFloor.get(), 1e-9);
+		assertEquals(d.spectroCeiling.get(), st.spectroCeiling.get(), 1e-9);
 	}
 
 	@Test

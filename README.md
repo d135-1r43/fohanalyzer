@@ -35,6 +35,10 @@
 - **Peak hold, peak markers, transfer function.** Overlays for the mic−solo difference and
   for what the plot did while you were not looking.
 - **Reference capture.** A dashed ghost of both traces, to A/B before against after EQ.
+- **Spectrograph.** A scrolling time × frequency view of the mic, the solo bus or their
+  difference, on the RTA's frequency axis — alone or split under the RTA. A ring shows as a
+  bright vertical line that builds before it is obvious by ear, and the located ring is
+  marked down through the history.
 - **1/1 to 1/24 octave** resolution, with smoothing and frame averaging.
 - **AI assistant access (MCP).** An optional, read-only MCP server lets a harness such as
   Claude Code read the ring-out history, the readout history and the current band levels,
@@ -162,7 +166,8 @@ this app needs on multi-channel interfaces (Scarlett 18i20, Behringer Wing, …)
 ### Rail vs preferences
 
 The rail is ordered by how often a hand reaches for something mid-show: the source traces
-and what they read, then ring-out assist, the overlays, and the analysis settings
+and what they read, then ring-out assist, the view (RTA, spectrograph or both), the
+overlays, and the analysis settings
 (resolution, smoothing, averaging) last. Everything decided once when the rig is patched —
 which device feeds each source, and the SPL calibration — lives in a separate *Preferences*
 window instead, so it is not competing for the column you have to read during a show.

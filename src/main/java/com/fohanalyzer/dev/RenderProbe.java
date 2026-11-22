@@ -36,6 +36,10 @@ public class RenderProbe extends Application
 		AppState state = new AppState();
 		state.peakHold.set(true);
 		state.showTransfer.set(true);
+		// PROBE_VIEW=1 for the split view, 2 for the spectrograph alone; an
+		// environment variable because javafx:run forks the JVM
+		state.view.set(Integer.parseInt(System.getenv().getOrDefault("PROBE_VIEW", "0")));
+		state.spectroHistory.set(10);
 
 		AnalyzerView analyzer = new AnalyzerView(state);
 		BorderPane root = new BorderPane(analyzer);
@@ -44,7 +48,7 @@ public class RenderProbe extends Application
 		stage.setScene(scene);
 		stage.show();
 
-		PauseTransition wait = new PauseTransition(Duration.seconds(2.0));
+		PauseTransition wait = new PauseTransition(Duration.seconds(Double.parseDouble(System.getenv().getOrDefault("PROBE_SECONDS", "2"))));
 		wait.setOnFinished(e -> {
 			try
 			{

@@ -43,6 +43,30 @@ public final class AppState
 	public final StringProperty markerSource = new SimpleStringProperty("mic");
 	public final BooleanProperty showTransfer = new SimpleBooleanProperty(false);
 
+	// Plot view: the RTA, the spectrograph, or both stacked
+	public static final int VIEW_RTA = 0;
+	public static final int VIEW_SPLIT = 1;
+	public static final int VIEW_SPECTROGRAPH = 2;
+	public static final int SPECTRO_MIC = 0;
+	public static final int SPECTRO_SOLO = 1;
+	public static final int SPECTRO_DIFF = 2;
+	/** Bounds of the spectrograph's colour range controls, in dBFS. */
+	public static final double SPECTRO_FLOOR_MIN = -120;
+	public static final double SPECTRO_FLOOR_MAX = -20;
+	public static final double SPECTRO_CEILING_MIN = -70;
+	public static final double SPECTRO_CEILING_MAX = 0;
+	/**
+	 * Stays on the RTA until switched, so nobody's plot changes under them on
+	 * an update.
+	 */
+	public final IntegerProperty view = new SimpleIntegerProperty(VIEW_RTA);
+	public final IntegerProperty spectroSource = new SimpleIntegerProperty(SPECTRO_MIC);
+	/** Seconds of history the spectrograph spans, top to bottom. */
+	public final IntegerProperty spectroHistory = new SimpleIntegerProperty(30);
+	/** dBFS drawn darkest and brightest on the spectrograph. */
+	public final DoubleProperty spectroFloor = new SimpleDoubleProperty(-80);
+	public final DoubleProperty spectroCeiling = new SimpleDoubleProperty(-10);
+
 	// Source / channel selection ("live:<deviceId>" or a preset id)
 	public final StringProperty micChan = new SimpleStringProperty("ch32");
 	public final StringProperty soloChan = new SimpleStringProperty("pfl");

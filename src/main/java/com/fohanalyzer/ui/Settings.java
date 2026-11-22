@@ -42,6 +42,11 @@ public final class Settings
 	private static final String MARKERS = "markers";
 	private static final String MARKER_SOURCE = "markerSource";
 	private static final String SHOW_TRANSFER = "showTransfer";
+	private static final String VIEW = "view";
+	private static final String SPECTRO_SOURCE = "spectroSource";
+	private static final String SPECTRO_HISTORY = "spectroHistory";
+	private static final String SPECTRO_FLOOR = "spectroFloor";
+	private static final String SPECTRO_CEILING = "spectroCeiling";
 	private static final String MCP_ENABLED = "mcpEnabled";
 	private static final String MCP_PORT = "mcpPort";
 	private static final String PREFS_X = "prefsWinX";
@@ -62,6 +67,11 @@ public final class Settings
 	private static final Set<Integer> FRACTIONS = Set.of(1, 3, 6, 12, 24);
 	private static final Set<Integer> AVERAGES = Set.of(1, 2, 4, 8, 16);
 	private static final Set<String> MARKER_SOURCES = Set.of("mic", "solo");
+	private static final Set<Integer> VIEWS = Set.of(AppState.VIEW_RTA, AppState.VIEW_SPLIT,
+		AppState.VIEW_SPECTROGRAPH);
+	private static final Set<Integer> SPECTRO_SOURCES = Set.of(AppState.SPECTRO_MIC, AppState.SPECTRO_SOLO,
+		AppState.SPECTRO_DIFF);
+	private static final Set<Integer> SPECTRO_HISTORIES = Set.of(10, 30, 60);
 
 	/**
 	 * Unprivileged ports only: below 1024 needs root on macOS and Linux, so the
@@ -131,6 +141,11 @@ public final class Settings
 		state.markers.set(d.markers.get());
 		state.markerSource.set(d.markerSource.get());
 		state.showTransfer.set(d.showTransfer.get());
+		state.view.set(d.view.get());
+		state.spectroSource.set(d.spectroSource.get());
+		state.spectroHistory.set(d.spectroHistory.get());
+		state.spectroFloor.set(d.spectroFloor.get());
+		state.spectroCeiling.set(d.spectroCeiling.get());
 		state.micChanIdx.set(d.micChanIdx.get());
 		state.soloChanIdx.set(d.soloChanIdx.get());
 		state.soloStereo.set(d.soloStereo.get());
@@ -225,6 +240,16 @@ public final class Settings
 		if (AVERAGES.contains(avg)) st.avgN.set(avg);
 		String marker = prefs.get(MARKER_SOURCE, st.markerSource.get());
 		if (MARKER_SOURCES.contains(marker)) st.markerSource.set(marker);
+		int view = prefs.getInt(VIEW, st.view.get());
+		if (VIEWS.contains(view)) st.view.set(view);
+		int spectroSource = prefs.getInt(SPECTRO_SOURCE, st.spectroSource.get());
+		if (SPECTRO_SOURCES.contains(spectroSource)) st.spectroSource.set(spectroSource);
+		int history = prefs.getInt(SPECTRO_HISTORY, st.spectroHistory.get());
+		if (SPECTRO_HISTORIES.contains(history)) st.spectroHistory.set(history);
+		st.spectroFloor.set(clamp(prefs.getDouble(SPECTRO_FLOOR, st.spectroFloor.get()),
+			AppState.SPECTRO_FLOOR_MIN, AppState.SPECTRO_FLOOR_MAX, st.spectroFloor.get()));
+		st.spectroCeiling.set(clamp(prefs.getDouble(SPECTRO_CEILING, st.spectroCeiling.get()),
+			AppState.SPECTRO_CEILING_MIN, AppState.SPECTRO_CEILING_MAX, st.spectroCeiling.get()));
 
 		st.peakHold.set(prefs.getBoolean(PEAK_HOLD, st.peakHold.get()));
 		st.markers.set(prefs.getBoolean(MARKERS, st.markers.get()));
@@ -312,6 +337,11 @@ public final class Settings
 		st.markers.addListener((o, a, v) -> prefs.putBoolean(MARKERS, v));
 		st.markerSource.addListener((o, a, v) -> prefs.put(MARKER_SOURCE, v));
 		st.showTransfer.addListener((o, a, v) -> prefs.putBoolean(SHOW_TRANSFER, v));
+		st.view.addListener((o, a, v) -> prefs.putInt(VIEW, v.intValue()));
+		st.spectroSource.addListener((o, a, v) -> prefs.putInt(SPECTRO_SOURCE, v.intValue()));
+		st.spectroHistory.addListener((o, a, v) -> prefs.putInt(SPECTRO_HISTORY, v.intValue()));
+		st.spectroFloor.addListener((o, a, v) -> prefs.putDouble(SPECTRO_FLOOR, v.doubleValue()));
+		st.spectroCeiling.addListener((o, a, v) -> prefs.putDouble(SPECTRO_CEILING, v.doubleValue()));
 		st.showSpl.addListener((o, a, v) -> prefs.putBoolean(SHOW_SPL, v));
 		st.mcpEnabled.addListener((o, a, v) -> prefs.putBoolean(MCP_ENABLED, v));
 		st.mcpPort.addListener((o, a, v) -> prefs.putInt(MCP_PORT, v.intValue()));

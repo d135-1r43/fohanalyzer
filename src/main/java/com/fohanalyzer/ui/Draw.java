@@ -98,34 +98,86 @@ public final class Draw
 
 	public static void drawGrid(GraphicsContext g, double width, double plotW, double plotH)
 	{
+		drawDbGrid(g, width, plotH);
+		drawFreqGrid(g, plotW, PAD_T, plotH);
+		drawFreqLabels(g, plotW, PAD_T + plotH);
+	}
+
+	/**
+	 * The dB lines and their labels on the left axis, over the RTA's height.
+	 */
+	public static void drawDbGrid(GraphicsContext g, double width, double plotH)
+	{
 		g.setLineWidth(1);
-		Font f = Fonts.mono(11);
-		g.setFont(f);
+		g.setFont(Fonts.mono(11));
+		g.setTextAlign(TextAlignment.RIGHT);
+		g.setTextBaseline(VPos.CENTER);
 		for (double db = DB_TOP; db >= DB_BOT; db -= 12)
 		{
 			double y = Math.round(dbY(db, plotH)) + 0.5;
 			g.setStroke(Color.rgb(255, 255, 255, 0.05));
 			g.strokeLine(PAD_L, y, width - PAD_R, y);
 			g.setFill(Color.web("#4d5a6a"));
-			g.setTextAlign(TextAlignment.RIGHT);
-			g.setTextBaseline(VPos.CENTER);
 			g.fillText(fmtInt(db), PAD_L - 8, y);
 		}
+	}
+
+	/** The frequency lines, from {@code top} down {@code h}. */
+	public static void drawFreqGrid(GraphicsContext g, double plotW, double top, double h)
+	{
+		g.setLineWidth(1);
 		g.setStroke(Color.rgb(255, 255, 255, 0.035));
 		for (double fr : FREQ_MIN)
 		{
 			double x = Math.round(fX(fr, plotW)) + 0.5;
-			g.strokeLine(x, PAD_T, x, PAD_T + plotH);
+			g.strokeLine(x, top, x, top + h);
 		}
+		g.setStroke(Color.rgb(255, 255, 255, 0.08));
+		for (double fr : FREQ_MAJ_F)
+		{
+			double x = Math.round(fX(fr, plotW)) + 0.5;
+			g.strokeLine(x, top, x, top + h);
+		}
+	}
+
+	/** The frequency labels, under the plot's bottom edge at {@code bottom}. */
+	public static void drawFreqLabels(GraphicsContext g, double plotW, double bottom)
+	{
+		g.setFont(Fonts.mono(11));
 		g.setTextAlign(TextAlignment.CENTER);
 		g.setTextBaseline(VPos.TOP);
+		g.setFill(Color.web("#6d7d8e"));
 		for (int i = 0; i < FREQ_MAJ_F.length; i++)
 		{
 			double x = Math.round(fX(FREQ_MAJ_F[i], plotW)) + 0.5;
-			g.setStroke(Color.rgb(255, 255, 255, 0.08));
-			g.strokeLine(x, PAD_T, x, PAD_T + plotH);
-			g.setFill(Color.web("#6d7d8e"));
-			g.fillText(FREQ_MAJ_L[i], x, PAD_T + plotH + 8);
+			g.fillText(FREQ_MAJ_L[i], x, bottom + 8);
+		}
+	}
+
+	/**
+	 * The spectrograph's time axis: {@code now} at the top, then every third
+	 * (or, at 10 s, every half) of the history, with faint lines across.
+	 */
+	public static void drawTimeAxis(GraphicsContext g, double width, double top, double h, int historySec)
+	{
+		int divisions = historySec <= 10 ? 2 : 3;
+		g.setLineWidth(1);
+		g.setFont(Fonts.mono(11));
+		g.setTextAlign(TextAlignment.RIGHT);
+		for (int k = 0; k <= divisions; k++)
+		{
+			double y = Math.round(top + h * k / divisions) + 0.5;
+			if (k > 0 && k < divisions)
+			{
+				g.setStroke(Color.rgb(255, 255, 255, 0.06));
+				g.strokeLine(PAD_L, y, width - PAD_R, y);
+			}
+			// The end labels sit inside the band so they line up with its
+			// edges.
+			g.setTextBaseline(k == 0 ? VPos.TOP : k == divisions ? VPos.BOTTOM : VPos.CENTER);
+			g.setFill(Color.web("#4d5a6a"));
+			String label = k == 0 ? "now" : "−" + historySec * k / divisions + "s";
+			g.fillText(label, PAD_L - 8, y);
 		}
 	}
 

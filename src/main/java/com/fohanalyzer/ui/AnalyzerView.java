@@ -19,13 +19,19 @@ public final class AnalyzerView extends Region
 {
 	// 22 ms, i.e. ~45 Hz
 	private static final double FRAME_SEC = 0.022;
+	/** Gap between the RTA and the spectrograph in the split view. */
+	private static final double SPLIT_GAP = 14;
+	/** Share of the split view's height the RTA gets. */
+	private static final double SPLIT_RTA_SHARE = 0.55;
 
 	private final AppState state;
 	private final Canvas canvas = new Canvas();
 	private final SignalState sig = new SignalState();
+	private final Spectrograph spectrograph = new Spectrograph();
 
 	private long t0Nanos = 0;
 	private long lastFrameNanos = 0;
+	private double lastT = -1;
 	private double lastReport = 0;
 	private int lastCapture = 0;
 	private int holdResetStamp = 0;
@@ -122,6 +128,11 @@ public final class AnalyzerView extends Region
 			liveSolo != null ? liveSolo : sim.solo(),
 			mvc, svc, centers, state.smoothing.get(), state.avgN.get());
 
+		// Recorded whatever the view, so switching to it shows the past.
+		double dt = lastT < 0 ? 0 : t - lastT;
+		lastT = t;
+		spectrograph.record(frac, sig.dispMic, sig.trimSolo, state.spectroHistory.get(), dt);
+
 		if (t - lastReport > 0.12)
 		{
 			lastReport = t;
@@ -155,53 +166,96 @@ public final class AnalyzerView extends Region
 
 		boolean micOn = state.micOn.get();
 		boolean soloOn = state.soloOn.get();
-		boolean showTransfer = state.showTransfer.get();
+
+		int view = state.view.get();
+		boolean rtaShown = view != AppState.VIEW_SPECTROGRAPH;
+		boolean spectroShown = view != AppState.VIEW_RTA;
+		double rtaH = switch (view)
+		{
+			case AppState.VIEW_SPLIT -> Math.round((plotH - SPLIT_GAP) * SPLIT_RTA_SHARE);
+			case AppState.VIEW_SPECTROGRAPH -> 0;
+			default -> plotH;
+		};
+		double specTop = view == AppState.VIEW_SPLIT ? Draw.PAD_T + rtaH + SPLIT_GAP : Draw.PAD_T;
+		double specH = Draw.PAD_T + plotH - specTop;
 
 		Draw.drawBackground(g, width, height);
-		Draw.drawGrid(g, width, plotW, plotH);
+		if (rtaShown && rtaH > 0) drawRta(g, centers, width, plotW, rtaH, micOn, soloOn);
+		if (spectroShown && specH > 0) drawSpectrograph(g, centers, frac, width, plotW, specTop, specH);
+		Draw.drawFreqLabels(g, plotW, Draw.PAD_T + plotH);
+
+		// The located ring runs down the RTA and the spectrograph both, so it
+		// can be followed back through the history.
+		Double locate = state.locateFreq.get();
+		if (locate != null) Draw.drawLocateLine(g, locate, width, plotW, plotH);
+		if (mouseInside && rtaShown && rtaH > 0)
+		{
+			double[] xs = Draw.computeBarLayout(centers, plotW).xs();
+			Draw.drawHoverTooltip(g, new Draw.Mouse(mouseX, mouseY, true), centers, xs,
+				sig.dispMic, sig.trimSolo, state.soloTrim.get(), width, plotW, rtaH, micOn, soloOn);
+		}
+		Draw.drawZoneStrip(g, plotW, plotH, width, height);
+	}
+
+	private void drawRta(GraphicsContext g, double[] centers, double width, double plotW, double rtaH,
+		boolean micOn, boolean soloOn)
+	{
+		boolean showTransfer = state.showTransfer.get();
+
+		Draw.drawDbGrid(g, width, rtaH);
+		Draw.drawFreqGrid(g, plotW, Draw.PAD_T, rtaH);
 
 		Draw.BarLayout layout = Draw.computeBarLayout(centers, plotW);
 		double[] xs = layout.xs();
 		double[] barW = layout.barW();
-		double baseY = Draw.PAD_T + plotH;
+		double baseY = Draw.PAD_T + rtaH;
 		double aT = showTransfer ? 0.3 : 0.5;
 		double aB = showTransfer ? 0.05 : 0.07;
 		boolean tfShown = showTransfer && micOn && soloOn;
 
 		g.save();
 		g.beginPath();
-		g.rect(Draw.PAD_L, Draw.PAD_T, plotW, plotH);
+		g.rect(Draw.PAD_L, Draw.PAD_T, plotW, rtaH);
 		g.clip();
 
-		if (soloOn) Draw.drawBars(g, sig.trimSolo, xs, barW, plotH, baseY, 245, 165, 36, aT, aB);
-		if (micOn) Draw.drawBars(g, sig.dispMic, xs, barW, plotH, baseY, 34, 211, 238, aT, aB);
+		if (soloOn) Draw.drawBars(g, sig.trimSolo, xs, barW, rtaH, baseY, 245, 165, 36, aT, aB);
+		if (micOn) Draw.drawBars(g, sig.dispMic, xs, barW, rtaH, baseY, 34, 211, 238, aT, aB);
 		if (state.peakHold.get())
 		{
-			if (soloOn) Draw.drawHoldTicks(g, sig.trimHoldSolo, xs, barW, plotH, Color.rgb(245, 165, 36, 0.85));
-			if (micOn) Draw.drawHoldTicks(g, sig.holdMic, xs, barW, plotH, Color.rgb(34, 211, 238, 0.9));
+			if (soloOn) Draw.drawHoldTicks(g, sig.trimHoldSolo, xs, barW, rtaH, Color.rgb(245, 165, 36, 0.85));
+			if (micOn) Draw.drawHoldTicks(g, sig.holdMic, xs, barW, rtaH, Color.rgb(34, 211, 238, 0.9));
 		}
 		Draw.Reference ref = state.reference.get();
-		if (ref != null && state.showReference.get()) Draw.drawReference(g, ref, plotW, plotH, micOn, soloOn);
-		if (tfShown) Draw.drawTransferCurve(g, centers, sig.dispMic, sig.trimSolo, width, plotW, plotH);
+		if (ref != null && state.showReference.get()) Draw.drawReference(g, ref, plotW, rtaH, micOn, soloOn);
+		if (tfShown) Draw.drawTransferCurve(g, centers, sig.dispMic, sig.trimSolo, width, plotW, rtaH);
 
 		g.restore();
 
-		if (tfShown) Draw.drawTransferLabels(g, width, plotW, plotH);
+		if (tfShown) Draw.drawTransferLabels(g, width, plotW, rtaH);
 		if (state.markers.get())
 		{
 			boolean solo = "solo".equals(state.markerSource.get());
 			float[] src = solo ? sig.trimSolo : sig.dispMic;
 			boolean on = solo ? soloOn : micOn;
 			Color col = solo ? Color.web("#f5a524") : Color.web("#22d3ee");
-			if (on) Draw.drawPeakMarkers(g, src, centers, plotW, plotH, width, col);
+			if (on) Draw.drawPeakMarkers(g, src, centers, plotW, rtaH, width, col);
 		}
-		Double locate = state.locateFreq.get();
-		if (locate != null) Draw.drawLocateLine(g, locate, width, plotW, plotH);
-		if (mouseInside)
-		{
-			Draw.drawHoverTooltip(g, new Draw.Mouse(mouseX, mouseY, true), centers, xs,
-				sig.dispMic, sig.trimSolo, state.soloTrim.get(), width, plotW, plotH, micOn, soloOn);
-		}
-		Draw.drawZoneStrip(g, plotW, plotH, width, height);
+	}
+
+	private void drawSpectrograph(GraphicsContext g, double[] centers, int frac, double width, double plotW,
+		double top, double h)
+	{
+		g.save();
+		g.beginPath();
+		g.rect(Draw.PAD_L, top, plotW, h);
+		g.clip();
+
+		spectrograph.draw(g, top, h, plotW, centers, frac, state.spectroSource.get(),
+			state.spectroFloor.get(), state.spectroCeiling.get());
+		Draw.drawFreqGrid(g, plotW, top, h);
+
+		g.restore();
+
+		Draw.drawTimeAxis(g, width, top, h, state.spectroHistory.get());
 	}
 }

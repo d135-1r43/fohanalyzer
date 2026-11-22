@@ -202,6 +202,9 @@
 }
 .seg-btn.on { -fx-background-color: #1d2a36; -fx-text-fill: -txt; -fx-font-weight: bold; }
 
+/* ---- spectrograph colour key: the gradient itself is set from the code's colour map ---- */
+.spectro-key { -fx-min-height: 8; -fx-pref-height: 8; -fx-max-height: 8; -fx-background-radius: 4; }
+
 /* ---- spl ---- */
 .spl-display {
     -fx-background-color: -panel-2; -fx-border-color: rgba(163,230,53,0.15);

@@ -5,6 +5,14 @@ carries the `.dmg`. Dependency bumps are summarised rather than listed one by on
 
 ## [Unreleased]
 
+### Added
+
+- A spectrograph: a scrolling time × frequency view on the RTA's frequency axis, newest at the
+  top. The new **View** section on the rail switches between the RTA, a split with the
+  spectrograph under the RTA, and the spectrograph alone. It shows the mic, the solo bus or
+  Mic−Solo, over 10, 30 or 60 seconds, with an adjustable colour range. A located ring is
+  marked down through it too.
+
 ### Removed
 
 - The *Inject feedback* practice mode. Ring-out assist only shows when the mic is a live input.

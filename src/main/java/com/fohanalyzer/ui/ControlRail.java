@@ -53,6 +53,7 @@ public final class ControlRail extends ScrollPane
 			sourcesSection(),
 			splSection(),
 			ringoutSection(),
+			viewSection(),
 			overlaysSection(),
 			referenceSection(),
 			analysisSection(),
@@ -217,6 +218,93 @@ public final class ControlRail extends ScrollPane
 		Segmented avg = new Segmented(state.avgN, avgOpts);
 
 		return section("Analysis", resLbl, frac, row, slider, avgLbl, avg);
+	}
+
+	// ---- View -------------------------------------------------------------
+	/** dB a click or scroll moves the spectrograph's colour range. */
+	private static final double SPECTRO_RANGE_STEP = 5;
+
+	/**
+	 * RTA, spectrograph, or both stacked. The spectrograph's own options only
+	 * show while it is on screen.
+	 */
+	private VBox viewSection()
+	{
+		Map<Integer, String> viewOpts = new LinkedHashMap<>();
+		viewOpts.put(AppState.VIEW_RTA, "RTA");
+		viewOpts.put(AppState.VIEW_SPLIT, "Split");
+		viewOpts.put(AppState.VIEW_SPECTROGRAPH, "Spectro");
+		Segmented view = new Segmented(state.view, viewOpts);
+
+		Label srcLbl = new Label("Spectrograph source");
+		srcLbl.getStyleClass().add("row-lbl");
+		Map<Integer, String> srcOpts = new LinkedHashMap<>();
+		srcOpts.put(AppState.SPECTRO_MIC, "Mic");
+		srcOpts.put(AppState.SPECTRO_SOLO, "Solo");
+		srcOpts.put(AppState.SPECTRO_DIFF, "Mic−Solo");
+		Segmented src = new Segmented(state.spectroSource, srcOpts);
+
+		Label histLbl = new Label("History");
+		histLbl.getStyleClass().add("row-lbl");
+		Map<Integer, String> histOpts = new LinkedHashMap<>();
+		histOpts.put(10, "10 s");
+		histOpts.put(30, "30 s");
+		histOpts.put(60, "60 s");
+		Segmented hist = new Segmented(state.spectroHistory, histOpts);
+
+		AppState defaults = new AppState();
+		Label rangeLbl = new Label("Range");
+		rangeLbl.getStyleClass().add("row-lbl");
+		Trim floor = new Trim(state.spectroFloor, AppState.SPECTRO_FLOOR_MIN, AppState.SPECTRO_FLOOR_MAX,
+			SPECTRO_RANGE_STEP, defaults.spectroFloor.get(), true);
+		Trim ceiling = new Trim(state.spectroCeiling, AppState.SPECTRO_CEILING_MIN,
+			AppState.SPECTRO_CEILING_MAX, SPECTRO_RANGE_STEP, defaults.spectroCeiling.get(), true);
+		Region sp = new Region();
+		HBox.setHgrow(sp, Priority.ALWAYS);
+		HBox rangeRow = new HBox(floor, sp, ceiling);
+		rangeRow.setAlignment(Pos.CENTER_LEFT);
+
+		Region key = new Region();
+		key.getStyleClass().add("spectro-key");
+		key.setStyle("-fx-background-color: " + colourKeyGradient() + ";");
+		Label diffHint = new Label("Mic−Solo spans ±" + Math.round(Spectrograph.DIFF_RANGE)
+			+ " dB, dark where the mic is quieter.");
+		diffHint.getStyleClass().add("hint");
+		diffHint.setWrapText(true);
+
+		VBox spectroOpts = new VBox(8, srcLbl, src, histLbl, hist, rangeLbl, rangeRow, key, diffHint);
+		VBox sec = section("View", view, spectroOpts);
+
+		Runnable vis = () -> {
+			boolean shown = state.view.get() != AppState.VIEW_RTA;
+			spectroOpts.setVisible(shown);
+			spectroOpts.setManaged(shown);
+			// The level range means nothing for a difference, which has its
+			// own.
+			boolean diff = state.spectroSource.get() == AppState.SPECTRO_DIFF;
+			rangeRow.setDisable(diff);
+			diffHint.setVisible(diff);
+			diffHint.setManaged(diff);
+		};
+		state.view.addListener((o, a, b) -> vis.run());
+		state.spectroSource.addListener((o, a, b) -> vis.run());
+		vis.run();
+		return sec;
+	}
+
+	/** The spectrograph's colour map as a CSS gradient, for its key. */
+	private static String colourKeyGradient()
+	{
+		StringBuilder css = new StringBuilder("linear-gradient(to right");
+		int steps = 12;
+		for (int i = 0; i <= steps; i++)
+		{
+			javafx.scene.paint.Color c = Spectrograph.color(i / (double)steps);
+			css.append(String.format(java.util.Locale.US, ", rgb(%d,%d,%d) %d%%",
+				Math.round(c.getRed() * 255), Math.round(c.getGreen() * 255), Math.round(c.getBlue() * 255),
+				Math.round(100.0 * i / steps)));
+		}
+		return css.append(")").toString();
 	}
 
 	// ---- Overlays ---------------------------------------------------------

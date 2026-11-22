@@ -26,15 +26,24 @@ public final class Trim extends HBox
 	 */
 	public Trim(DoubleProperty value, double min, double max, boolean showValue)
 	{
+		this(value, min, max, STEP, 0, showValue);
+	}
+
+	/**
+	 * A trim stepping {@code step} dB at a time whose double-click goes back to
+	 * {@code resetTo}, for a level that is not an offset from zero.
+	 */
+	public Trim(DoubleProperty value, double min, double max, double step, double resetTo, boolean showValue)
+	{
 		super(4);
 		setAlignment(Pos.CENTER_RIGHT);
 
-		Button down = stepButton("−", () -> nudge(value, -STEP, min, max));
-		Button up = stepButton("+", () -> nudge(value, STEP, min, max));
+		Button down = stepButton("−", () -> nudge(value, -step, min, max));
+		Button up = stepButton("+", () -> nudge(value, step, min, max));
 		if (!showValue)
 		{
 			getChildren().addAll(down, up);
-			scrollNudges(this, value, min, max);
+			scrollNudges(this, value, min, max, step);
 			return;
 		}
 
@@ -44,26 +53,31 @@ public final class Trim extends HBox
 		val.setAlignment(Pos.CENTER);
 		Tooltip.install(val, new Tooltip("Scroll to nudge · double-click to reset"));
 		val.setOnMouseClicked(e -> {
-			if (e.getButton() == MouseButton.PRIMARY && e.getClickCount() == 2) value.set(0);
+			if (e.getButton() == MouseButton.PRIMARY && e.getClickCount() == 2) value.set(resetTo);
 		});
 		Runnable refresh = () -> {
 			val.setText(fmtDb(value.get()));
 			val.getStyleClass().remove("trim-on");
-			if (value.get() != 0) val.getStyleClass().add("trim-on");
+			if (value.get() != resetTo) val.getStyleClass().add("trim-on");
 		};
 		value.addListener((o, a, b) -> refresh.run());
 		refresh.run();
 
 		getChildren().addAll(down, val, up);
-		scrollNudges(this, value, min, max);
+		scrollNudges(this, value, min, max, step);
 	}
 
 	/** Let the scroll wheel over {@code node} step {@code value}. */
 	public static void scrollNudges(Node node, DoubleProperty value, double min, double max)
 	{
+		scrollNudges(node, value, min, max, STEP);
+	}
+
+	private static void scrollNudges(Node node, DoubleProperty value, double min, double max, double step)
+	{
 		node.setOnScroll(e -> {
 			if (e.getDeltaY() == 0 || node.isDisabled()) return;
-			nudge(value, e.getDeltaY() > 0 ? STEP : -STEP, min, max);
+			nudge(value, e.getDeltaY() > 0 ? step : -step, min, max);
 			e.consume();
 		});
 	}

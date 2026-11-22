@@ -4,7 +4,6 @@ import com.fohanalyzer.audio.AudioSource;
 import com.fohanalyzer.dsp.SignalState;
 import com.fohanalyzer.dsp.Stats;
 import com.fohanalyzer.engine.Engine;
-import com.fohanalyzer.engine.Ring;
 import com.fohanalyzer.engine.Voice;
 import javafx.animation.AnimationTimer;
 import javafx.scene.canvas.Canvas;
@@ -111,8 +110,7 @@ public final class AnalyzerView extends Region
 			sig.resetHold();
 		}
 
-		Ring ring = state.ring.get();
-		Engine.SimFrame sim = Engine.sample(centers, t, ring);
+		Engine.SimFrame sim = Engine.sample(centers, t);
 
 		float[] liveMic = liveBands(state.micSource, centers, frac);
 		float[] liveSolo = liveBands(state.soloSource, centers, frac);

@@ -1,6 +1,5 @@
 package com.fohanalyzer.dev;
 
-import com.fohanalyzer.engine.Ring;
 import com.fohanalyzer.ui.AnalyzerView;
 import com.fohanalyzer.ui.AppState;
 import javafx.animation.PauseTransition;
@@ -37,7 +36,6 @@ public class RenderProbe extends Application
 		AppState state = new AppState();
 		state.peakHold.set(true);
 		state.showTransfer.set(true);
-		state.ring.set(new Ring(true, 2500, 0)); // exercise the ring-out path
 
 		AnalyzerView analyzer = new AnalyzerView(state);
 		BorderPane root = new BorderPane(analyzer);

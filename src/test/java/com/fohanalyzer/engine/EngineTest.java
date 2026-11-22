@@ -158,7 +158,7 @@ class EngineTest
 		@Test
 		void returnsArraysMatchingCentersLength()
 		{
-			var f = Engine.sample(centers, 0, null);
+			var f = Engine.sample(centers, 0);
 			assertEquals(centers.length, f.mic().length);
 			assertEquals(centers.length, f.solo().length);
 		}
@@ -168,7 +168,7 @@ class EngineTest
 		{
 			for (double t : new double[] { 0, 0.5, 1.0, 2.0 })
 			{
-				var f = Engine.sample(centers, t, null);
+				var f = Engine.sample(centers, t);
 				for (int i = 0; i < centers.length; i++)
 				{
 					assertTrue(f.mic()[i] >= -95 && f.mic()[i] <= -2);
@@ -178,38 +178,10 @@ class EngineTest
 		}
 
 		@Test
-		void activeRingRaisesLevelsNearRingFreq()
-		{
-			double fc = 1000;
-			var ring = new Ring(true, fc, 0);
-			var withRing = Engine.sample(centers, 2, ring);
-			var quiet = Engine.sample(centers, 2, null);
-			int near = 0;
-			for (int i = 1; i < centers.length; i++)
-			{
-				if (Math.abs(centers[i] - fc) < Math.abs(centers[near] - fc)) near = i;
-			}
-			assertTrue(withRing.mic()[near] > quiet.mic()[near]);
-		}
-
-		@Test
-		void inactiveRingSameAsNull()
-		{
-			var ring = new Ring(false, 1000, 0);
-			var withRing = Engine.sample(centers, 1, ring);
-			var nullRing = Engine.sample(centers, 1, null);
-			for (int i = 0; i < centers.length; i++)
-			{
-				assertEquals(nullRing.mic()[i], withRing.mic()[i], EPS);
-				assertEquals(nullRing.solo()[i], withRing.solo()[i], EPS);
-			}
-		}
-
-		@Test
 		void outputVariesOverTime()
 		{
-			var a = Engine.sample(centers, 0, null);
-			var b = Engine.sample(centers, 1, null);
+			var a = Engine.sample(centers, 0);
+			var b = Engine.sample(centers, 1);
 			boolean differs = false;
 			for (int i = 0; i < centers.length; i++)
 			{

@@ -29,8 +29,7 @@
   (amber), so room response and source signal are read against each other rather than in
   turn.
 - **Ring-out assist.** With a live mic, *Detect ring* reports the actual ringing
-  fundamental — not the band centre a peak marker rounds to — and suggests a cut. With a
-  simulated mic, *Inject feedback* is a practice mode for the same workflow.
+  fundamental — not the band centre a peak marker rounds to — and suggests a cut.
 - **SPL metering.** Calibrate against a known reference level and the readout is real dB
   SPL rather than dBFS.
 - **Peak hold, peak markers, transfer function.** Overlays for the mic−solo difference and
@@ -211,8 +210,8 @@ With a **live** measurement mic, *Detect ring from mic* runs TarsosDSP's `FastYi
 the newest audio and logs the actual ringing fundamental, rather than the band centre the
 peak markers round to. Four consecutive 2048-sample blocks are estimated independently and
 the median is logged, so one glitched block cannot shift the frequency you go on to notch.
-The suggested cut comes from how far the loudest band stands above the mic average. With a
-simulated mic, only the *Inject feedback* practice mode is offered.
+The suggested cut comes from how far the loudest band stands above the mic average. The
+section is hidden while the mic is a simulated preset.
 
 ### MCP server
 

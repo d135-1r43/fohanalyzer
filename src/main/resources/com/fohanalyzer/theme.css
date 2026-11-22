@@ -137,8 +137,6 @@
     -fx-padding: 11; -fx-cursor: hand; -fx-max-width: infinity;
 }
 .btn-capture { -fx-background-color: rgba(34,211,238,0.08); -fx-text-fill: -cyan; -fx-border-color: rgba(34,211,238,0.35); }
-.btn-ring { -fx-background-color: rgba(245,87,93,0.10); -fx-text-fill: #ff8a8e; -fx-border-color: rgba(245,87,93,0.4); }
-.btn-clear { -fx-background-color: #131b25; -fx-text-fill: -txt-dim; -fx-border-color: -line; }
 .btn-detect { -fx-background-color: rgba(163,230,53,0.08); -fx-text-fill: -lime; -fx-border-color: rgba(163,230,53,0.35); }
 .btn-prefs {
     -fx-background-color: #131b25; -fx-text-fill: -txt-dim; -fx-border-color: -line;

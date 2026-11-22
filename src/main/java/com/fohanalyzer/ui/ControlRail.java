@@ -5,7 +5,6 @@ import com.fohanalyzer.audio.AudioDsp;
 import com.fohanalyzer.audio.AudioSource;
 import com.fohanalyzer.dsp.Stats;
 import com.fohanalyzer.engine.Engine;
-import com.fohanalyzer.engine.Ring;
 import com.fohanalyzer.ui.controls.Meter;
 import com.fohanalyzer.ui.controls.Segmented;
 import com.fohanalyzer.ui.controls.SourceCard;
@@ -20,7 +19,6 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Random;
 
 /**
  * The control rail (right panel): every settings section and its handlers.
@@ -31,7 +29,6 @@ public final class ControlRail extends ScrollPane
 	private final AppState state;
 	private final Settings settings;
 	private final PreferencesWindow preferences;
-	private final Random rng = new Random();
 
 	private SourceCard micCard;
 	private SourceCard soloCard;
@@ -309,52 +306,29 @@ public final class ControlRail extends ScrollPane
 
 	private VBox ringoutSection()
 	{
-		Label copy = new Label("Simulate a monitor feedback ring to practise hunting the offending band.");
+		Label copy = new Label("Find what the live mic is ringing at and get the GEQ band to cut.");
 		copy.getStyleClass().add("hint");
+		copy.setWrapText(true);
 		detectHint = new Label();
 		detectHint.getStyleClass().add("hint");
 		detectHint.setWrapText(true);
-		VBox controls = new VBox(10);
+		Button detect = new Button("⌖  Detect ring from mic");
+		detect.getStyleClass().addAll("btn", "btn-detect");
+		detect.setMaxWidth(Double.MAX_VALUE);
+		detect.setOnAction(e -> detectRing());
+		VBox controls = new VBox(10, detect, detectHint);
 		VBox log = new VBox(6);
 		VBox sec = section("Ring-out assist", copy, controls, log);
 
-		Runnable rebuildControls = () -> {
-			controls.getChildren().clear();
-			Ring r = state.ring.get();
-			if (r.active())
-			{
-				Label ring = new Label("Ringing @ " + Engine.fmtFreq(r.fc()) + " · " + Engine.noteName(r.fc()));
-				ring.getStyleClass().add("fb-freq");
-				Button clear = new Button("Clear feedback");
-				clear.getStyleClass().addAll("btn", "btn-clear");
-				clear.setMaxWidth(Double.MAX_VALUE);
-				clear.setOnAction(e -> injectRing());
-				controls.getChildren().addAll(ring, clear);
-			}
-			else
-			{
-				Button inject = new Button("⚠  Inject feedback");
-				inject.getStyleClass().addAll("btn", "btn-ring");
-				inject.setMaxWidth(Double.MAX_VALUE);
-				inject.setOnAction(e -> injectRing());
-				controls.getChildren().add(inject);
-			}
-			// Real detection only makes sense against a live mic, not the
-			// simulation.
-			if (state.isMicLive())
-			{
-				Button detect = new Button("⌖  Detect ring from mic");
-				detect.getStyleClass().addAll("btn", "btn-detect");
-				detect.setMaxWidth(Double.MAX_VALUE);
-				detect.setOnAction(e -> detectRing());
-				controls.getChildren().addAll(detect, detectHint);
-			}
-			else
-			{
-				detectHint.setText("");
-			}
+		// Detection only works against a live mic, so the section only shows
+		// with one.
+		Runnable showForLiveMic = () -> {
+			boolean live = state.isMicLive();
+			sec.setVisible(live);
+			sec.setManaged(live);
+			detectHint.setText("");
 		};
-		state.micChan.addListener((o, a, b) -> rebuildControls.run());
+		state.micChan.addListener((o, a, b) -> showForLiveMic.run());
 
 		Runnable rebuildLog = () -> {
 			log.getChildren().clear();
@@ -374,10 +348,9 @@ public final class ControlRail extends ScrollPane
 				log.getChildren().add(fbRow(en));
 		};
 
-		state.ring.addListener((o, a, b) -> rebuildControls.run());
 		state.feedbackLog.addListener((javafx.collections.ListChangeListener<FeedbackEntry>)c -> rebuildLog.run());
 		state.locateFreq.addListener((o, a, b) -> rebuildLog.run());
-		rebuildControls.run();
+		showForLiveMic.run();
 		rebuildLog.run();
 		return sec;
 	}
@@ -406,18 +379,6 @@ public final class ControlRail extends ScrollPane
 		if (on) row.getStyleClass().add("on");
 		row.setOnMouseClicked(e -> toggleLocate(en.freq()));
 		return row;
-	}
-
-	private void injectRing()
-	{
-		if (state.ring.get().active())
-		{
-			state.ring.set(Ring.INACTIVE);
-			return;
-		}
-		double fc = 1600 + rng.nextDouble() * 2600;
-		state.ring.set(new Ring(true, fc, System.nanoTime() / 1e9));
-		logFeedback(fc, 4 + (int)Math.round(rng.nextDouble() * 3));
 	}
 
 	/**

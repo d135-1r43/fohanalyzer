@@ -3,7 +3,6 @@ package com.fohanalyzer.ui;
 import com.fohanalyzer.audio.AudioDevice;
 import com.fohanalyzer.audio.AudioSource;
 import com.fohanalyzer.dsp.Stats;
-import com.fohanalyzer.engine.Ring;
 import com.fohanalyzer.engine.Voice;
 import com.fohanalyzer.mcp.AnalyzerHistory;
 import javafx.beans.property.*;
@@ -68,7 +67,6 @@ public final class AppState
 	public static final double SOLO_TRIM_MAX = 60;
 
 	// Ring-out / reference / overlays
-	public final ObjectProperty<Ring> ring = new SimpleObjectProperty<>(Ring.INACTIVE);
 	public final IntegerProperty captureNonce = new SimpleIntegerProperty(0);
 	public final ObjectProperty<Draw.Reference> reference = new SimpleObjectProperty<>(null);
 	public final BooleanProperty showReference = new SimpleBooleanProperty(true);

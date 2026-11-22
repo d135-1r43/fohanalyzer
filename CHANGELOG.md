@@ -5,6 +5,10 @@ carries the `.dmg`. Dependency bumps are summarised rather than listed one by on
 
 ## [Unreleased]
 
+### Removed
+
+- The *Inject feedback* practice mode. Ring-out assist only shows when the mic is a live input.
+
 ### Fixed
 
 - A live input could show nothing after a restart: the card named the right channel, but the

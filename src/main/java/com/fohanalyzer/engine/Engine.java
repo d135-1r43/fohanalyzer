@@ -101,10 +101,9 @@ public final class Engine
 
 	/**
 	 * Generate one frame of the two simulated traces at time {@code t}
-	 * (seconds). {@code ring} may be {@code null} (treated as inactive). Direct
-	 * port of {@code sample()}.
+	 * (seconds). Direct port of {@code sample()}.
 	 */
-	public static SimFrame sample(double[] centers, double t, Ring ring)
+	public static SimFrame sample(double[] centers, double t)
 	{
 		int n = centers.length;
 		float[] mic = new float[n];
@@ -121,18 +120,6 @@ public final class Engine
 		double bassSust = 0.45 + 0.55 * (0.5 + 0.5 * Math.sin(t * Math.PI));
 		double lead = 0.5 + 0.5 * Math.sin(t * 1.27) + 0.3 * Math.sin(t * 2.73 + 1.1);
 		lead = Math.clamp(lead, 0, 1);
-
-		double ringLvl = 0;
-		double ringOsc = 1;
-		double ringFc = 1000;
-
-		if (ring != null && ring.active())
-		{
-			double age = t - ring.t0();
-			ringLvl = Math.min(42, age * 50);
-			ringOsc = 1 + 0.12 * Math.sin(t * 38);
-			ringFc = ring.fc();
-		}
 
 		for (int i = 0; i < n; i++)
 		{
@@ -165,12 +152,6 @@ public final class Engine
 
 			double mv = g + md + micJit;
 			double sv = g + 1.2 + soloJit;
-
-			if (ringLvl > 0)
-			{
-				mv += bump(f, ringFc, 0.16, ringLvl) * ringOsc;
-				sv += bump(f, ringFc, 0.17, ringLvl * 0.7) * ringOsc;
-			}
 
 			mic[i] = (float)Math.clamp(mv, -95, -2);
 			solo[i] = (float)Math.clamp(sv, -95, -2);

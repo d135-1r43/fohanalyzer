@@ -15,9 +15,10 @@ import javax.sound.sampled.TargetDataLine;
  *
  * <p>
  * A daemon thread continuously reads PCM frames and maintains the most recent
- * {@link #FFT_SIZE} samples of the selected channel in a ring buffer.
- * {@link #readBands} / {@link #readRMS} snapshot that buffer and run the
- * transform off the capture thread.
+ * {@link #FFT_SIZE} samples of the selected channel in a ring buffer. After
+ * each block it transforms the window and publishes the spectrum and RMS, so
+ * {@link #readBands} / {@link #readRMS} only reduce what is already there and
+ * the FX thread never runs an FFT.
  */
 public final class AudioSource
 {
@@ -44,6 +45,19 @@ public final class AudioSource
 	private final float[] ringR = new float[FFT_SIZE];
 	private int ringPos = 0;
 	private final Object ringLock = new Object();
+
+	/**
+	 * Frames per read. 1024 at 48 kHz is a fresh spectrum every ~21 ms, about
+	 * one per drawn frame.
+	 */
+	private static final int READ_FRAMES = 1024;
+
+	/** The latest window, transformed: dBFS spectrum plus broadband RMS. */
+	private record Analysis(double[] specDb, double rmsDb)
+	{
+	}
+
+	private volatile Analysis latest;
 
 	public boolean isConnected()
 	{
@@ -248,6 +262,7 @@ public final class AudioSource
 		channelCount = 1;
 		channelIndex = 0;
 		deviceId = null;
+		latest = null;
 		synchronized (ringLock)
 		{
 			java.util.Arrays.fill(ring, 0f);
@@ -261,7 +276,10 @@ public final class AudioSource
 		int frameSize = format.getFrameSize();
 		int ch = format.getChannels();
 		int bytesPerSample = frameSize / ch;
-		byte[] buf = new byte[frameSize * 2048];
+		byte[] buf = new byte[frameSize * READ_FRAMES];
+		// Reused across blocks; only this thread touches them.
+		float[] l = new float[FFT_SIZE];
+		float[] r = new float[FFT_SIZE];
 		try
 		{
 			while (running && line != null)
@@ -285,7 +303,9 @@ public final class AudioSource
 							: 0f;
 						ringPos = (ringPos + 1) % FFT_SIZE;
 					}
+					copyWindow(l, r, pair);
 				}
+				latest = analyse(l, r, pair);
 			}
 		}
 		catch (Exception e)
@@ -313,6 +333,31 @@ public final class AudioSource
 			default -> ((b[off] & 0xff) | ((b[off + 1] & 0xff) << 8)
 				| ((b[off + 2] & 0xff) << 16) | (b[off + 3] << 24)) / 2147483648f;
 		};
+	}
+
+	/**
+	 * Copy the ring into {@code l} (and {@code r} for a pair) in chronological
+	 * order. Caller holds {@link #ringLock}.
+	 */
+	private void copyWindow(float[] l, float[] r, boolean pair)
+	{
+		int head = FFT_SIZE - ringPos;
+		System.arraycopy(ring, ringPos, l, 0, head);
+		System.arraycopy(ring, 0, l, head, ringPos);
+		if (!pair) return;
+		System.arraycopy(ringR, ringPos, r, 0, head);
+		System.arraycopy(ringR, 0, r, head, ringPos);
+	}
+
+	/**
+	 * Spectrum and RMS of one window, or of a pair merged in the power domain —
+	 * see {@link AudioDsp#mergePower} for why not summing the windows first.
+	 */
+	private static Analysis analyse(float[] l, float[] r, boolean pair)
+	{
+		if (!pair) return new Analysis(AudioDsp.spectrumDb(l), AudioDsp.rmsDb(l));
+		double[] merged = AudioDsp.mergePower(AudioDsp.spectrumDb(l), AudioDsp.spectrumDb(r));
+		return new Analysis(merged, AudioDsp.powerMeanDb(AudioDsp.rmsDb(l), AudioDsp.rmsDb(r)));
 	}
 
 	/** Latest FFT window in chronological order. */
@@ -365,18 +410,17 @@ public final class AudioSource
 	public float[] readBands(double[] centers, int frac)
 	{
 		if (!isConnected()) return null;
-		double binHz = sampleRate / FFT_SIZE;
-		if (!stereo)
-		{
-			return AudioDsp.bands(AudioDsp.spectrumDb(snapshotWindow()), binHz, centers, frac);
-		}
-		// Each side is transformed on its own and only the magnitudes are
-		// merged — see AudioDsp.mergePower for why this rather than summing the
-		// two windows before the transform.
-		float[][] w = snapshotPair();
-		double[] merged = AudioDsp.mergePower(
-			AudioDsp.spectrumDb(w[0]), AudioDsp.spectrumDb(w[1]));
-		return AudioDsp.bands(merged, binHz, centers, frac);
+		Analysis a = latest;
+		// Connected but no block read yet: silence, not the simulation.
+		if (a == null) return silence(centers.length);
+		return AudioDsp.bands(a.specDb(), sampleRate / FFT_SIZE, centers, frac);
+	}
+
+	private static float[] silence(int n)
+	{
+		float[] out = new float[n];
+		java.util.Arrays.fill(out, -95f);
+		return out;
 	}
 
 	/**
@@ -386,9 +430,8 @@ public final class AudioSource
 	public Double readRMS()
 	{
 		if (!isConnected()) return null;
-		if (!stereo) return AudioDsp.rmsDb(snapshotWindow());
-		float[][] w = snapshotPair();
-		return AudioDsp.powerMeanDb(AudioDsp.rmsDb(w[0]), AudioDsp.rmsDb(w[1]));
+		Analysis a = latest;
+		return a != null ? a.rmsDb() : -144.0;
 	}
 
 	/**

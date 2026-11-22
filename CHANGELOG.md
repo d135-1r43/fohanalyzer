@@ -11,6 +11,9 @@ carries the `.dmg`. Dependency bumps are summarised rather than listed one by on
 
 ### Fixed
 
+- The window lagged and could stall: drawing the plot kept the GPU busy for longer than a
+  frame. It now runs at a steady 60 fps on far less CPU, and the spectrum is computed on the
+  audio thread instead of the UI thread.
 - A live input could show nothing after a restart: the card named the right channel, but the
   analyser was reading a different one. Input changes are now applied in the order they were
   made, so the channel shown is always the one being read.

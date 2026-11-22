@@ -5,8 +5,6 @@ import com.fohanalyzer.engine.Zone;
 import com.fohanalyzer.ui.controls.Trim;
 import javafx.geometry.VPos;
 import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.effect.BlendMode;
-import javafx.scene.effect.DropShadow;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.CycleMethod;
 import javafx.scene.paint.LinearGradient;
@@ -34,6 +32,7 @@ public final class Draw
 
 	private static final double[] FREQ_MAJ_F = { 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000 };
 	private static final String[] FREQ_MAJ_L = { "20", "50", "100", "200", "500", "1k", "2k", "5k", "10k", "20k" };
+	private static final Color TF_LINE = Color.web("#b794f6");
 	private static final double[] FREQ_MIN = { 30, 40, 70, 300, 400, 700, 3000, 4000, 7000, 15000 };
 
 	private Draw()
@@ -50,12 +49,19 @@ public final class Draw
 		return PAD_L + Engine.freqNorm(f) * plotW;
 	}
 
+	/**
+	 * A dot with a soft halo. The halo is two translucent rings rather than a
+	 * DropShadow: an effect on a canvas op is rendered through an offscreen
+	 * pass of its own, every frame.
+	 */
 	private static void dot(GraphicsContext g, double x, double y, Color c)
 	{
+		g.setFill(c.deriveColor(0, 1, 1, 0.15));
+		g.fillOval(x - 7, y - 7, 14, 14);
+		g.setFill(c.deriveColor(0, 1, 1, 0.3));
+		g.fillOval(x - 5, y - 5, 10, 10);
 		g.setFill(c);
-		g.setEffect(new DropShadow(6, c));
 		g.fillOval(x - 3, y - 3, 6, 6);
-		g.setEffect(null);
 	}
 
 	private static void roundRect(GraphicsContext g, double x, double y, double w, double h, double r)
@@ -149,22 +155,32 @@ public final class Draw
 		return new BarLayout(xs, barW);
 	}
 
+	/**
+	 * One trace as bars under a single plot-high gradient.
+	 *
+	 * <p>
+	 * Kept deliberately cheap for the GPU: plain {@code fillRect}s, which stay
+	 * on the GPU, with one gradient per trace rather than one per bar, and no
+	 * blend mode. An additive blend on a canvas costs an offscreen pass per
+	 * bar, hundreds a frame at fine resolutions, which is what made the window
+	 * lag. Batching the bars into one path is no better: a path is rasterised
+	 * on the CPU.
+	 */
 	public static void drawBars(GraphicsContext g, float[] arr, double[] xs, double[] barW,
 		double plotH, double baseY, int r, int gc, int b,
 		double aTop, double aBot)
 	{
 		int n = arr.length;
-		g.setGlobalBlendMode(BlendMode.ADD);
+		g.setFill(new LinearGradient(0, PAD_T, 0, baseY, false, CycleMethod.NO_CYCLE,
+			new Stop(0, Color.rgb(r, gc, b, aTop)),
+			new Stop(1, Color.rgb(r, gc, b, aBot))));
 		for (int i = 0; i < n; i++)
 		{
 			double w = Math.max(1.5, barW[i] * 0.82);
 			double y = dbY(arr[i], plotH);
-			g.setFill(new LinearGradient(0, y, 0, baseY, false, CycleMethod.NO_CYCLE,
-				new Stop(0, Color.rgb(r, gc, b, aTop)),
-				new Stop(1, Color.rgb(r, gc, b, aBot))));
 			g.fillRect(xs[i] - w / 2, y, w, baseY - y);
 		}
-		g.setGlobalBlendMode(BlendMode.SRC_OVER);
+
 		g.setFill(Color.rgb(r, gc, b));
 		for (int i = 0; i < n; i++)
 		{
@@ -239,11 +255,14 @@ public final class Draw
 				g.lineTo(x, y);
 		}
 
-		g.setLineWidth(2.5);
-		g.setStroke(Color.web("#b794f6"));
-		g.setEffect(new DropShadow(7, Color.web("#b794f6")));
+		// The glow is a wider translucent stroke under the line, not a
+		// DropShadow, which renders through an offscreen pass every frame.
+		g.setStroke(Color.rgb(183, 148, 246, 0.2));
+		g.setLineWidth(7);
 		g.stroke();
-		g.setEffect(null);
+		g.setLineWidth(2.5);
+		g.setStroke(TF_LINE);
+		g.stroke();
 	}
 
 	public static void drawTransferLabels(GraphicsContext g, double width, double plotW, double plotH)

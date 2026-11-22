@@ -110,10 +110,9 @@ public final class AnalyzerView extends Region
 			sig.resetHold();
 		}
 
-		Engine.SimFrame sim = Engine.sample(centers, t);
-
 		float[] liveMic = liveBands(state.micSource, centers, frac);
 		float[] liveSolo = liveBands(state.soloSource, centers, frac);
+		Engine.SimFrame sim = liveMic != null && liveSolo != null ? null : Engine.sample(centers, t);
 
 		Voice mvc = liveMic != null ? Voice.NEUTRAL : state.micVoice();
 		Voice svc = liveSolo != null ? Voice.NEUTRAL : state.soloVoice();

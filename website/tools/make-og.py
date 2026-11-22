@@ -43,8 +43,11 @@ RESOURCES = "src/main/resources/com/fohanalyzer/fonts"
 # error that only FOH_FONTS can clear. The new name is what the failure
 # message names when neither is there.
 def sibling_fonts():
-	for name in ("fohanalyzer", "fohanalyzer-java"):
-		candidate = ROOT.parent / name / RESOURCES
+	# The site now lives in website/ of the app repository itself, so its
+	# parent is the first place to look.
+	candidates = [ROOT.parent / RESOURCES]
+	candidates += [ROOT.parent.parent / name / RESOURCES for name in ("fohanalyzer", "fohanalyzer-java")]
+	for candidate in candidates:
 		if (candidate / "Barlow-Bold.ttf").is_file():
 			return candidate
 	return ROOT.parent / "fohanalyzer" / RESOURCES
@@ -96,15 +99,15 @@ for x, y, w, h, c in ((8, 22, 4.5, 10, CYAN), (14.5, 14, 4.5, 18, CYAN),
 
 tx = PAD + 72 * S + 22
 d.text((tx, LY + 10), "FOHanalyzer", font=barlow_b(40), fill=TXT)
-d.text((tx + 2, LY + 58), "D U A L   S P E C T R U M  ·  R T A", font=mono_r(15), fill=TXT_MUT)
+d.text((tx + 2, LY + 58), "R T A  ·  S P E C T R O G R A P H  ·  S P L", font=mono_r(15), fill=TXT_MUT)
 
 # -- headline ---------------------------------------------------------------
-# "Read the room." plain, "Hunt the ring." in the accent gradient — the same
+# "Everything FOH" plain, "needs to see." in the accent gradient — the same
 # split the hero makes.
 h1 = barlow_b(92)
-d.text((PAD, 232), "Read the room.", font=h1, fill=TXT)
+d.text((PAD, 232), "Everything FOH", font=h1, fill=TXT)
 
-line2, y2 = "Hunt the ring.", 330
+line2, y2 = "needs to see.", 330
 mask = Image.new("L", (W, H), 0)
 ImageDraw.Draw(mask).text((PAD, y2), line2, font=h1, fill=255)
 grad = Image.new("RGB", (W, H))
@@ -116,7 +119,7 @@ img.paste(grad, (0, 0), mask)
 d = ImageDraw.Draw(img)
 
 # -- strapline --------------------------------------------------------------
-d.text((PAD, 456), "A dual-channel RTA for front-of-house engineers.",
+d.text((PAD, 456), "RTA, spectrograph and SPL meter for front of house.",
        font=barlow_b(26), fill=TXT_DIM)
 
 # -- chip -------------------------------------------------------------------
@@ -129,17 +132,45 @@ d.rounded_rectangle([cx, cy, cx + tw + 34, cy + 42], radius=8,
 d.text((cx + 17, cy + 11), label, font=f, fill=LIME)
 
 # -- spectrum ---------------------------------------------------------------
-# The illustration from the hero: a log-tilted bar display with peak caps.
-# Confined to the right column — the headline runs to roughly x=700, so the
+# The illustration from the hero: a log-tilted bar display with peak caps,
+# and the app's split view under it — a spectrograph on the same columns.
+# Confined to the right column — the headline runs to roughly x=740, so the
 # bars start well clear of it rather than overprinting the words.
 BARS, BW, GAP = 20, 12, 6
 right = W - PAD
-base_y, max_h = 500, 300
-for i in range(BARS):
-	p = i / (BARS - 1)
+base_y, max_h = 372, 190
+
+# The app's spectrograph palette, quiet to loud.
+HEAT = [(12, 28, 58), (22, 92, 140), (30, 170, 170), (120, 214, 80), (238, 226, 90)]
+
+
+def heat(v):
+	v = max(0.0, min(1.0, v)) * (len(HEAT) - 1)
+	k = min(int(v), len(HEAT) - 2)
+	return lerp(HEAT[k], HEAT[k + 1], v - k)
+
+
+def level(p):
 	tilt = 0.92 - 0.55 * pow(p, 1.35) + 0.10 * math.exp(-pow((p - 0.22) / 0.16, 2))
 	wob = 0.10 * math.sin(p * 11.0) + 0.06 * math.sin(p * 23.0 + 1.1)
-	v = max(0.06, min(1.0, tilt + wob))
+	return max(0.06, min(1.0, tilt + wob))
+
+
+ROWS, RH, top_s = 12, 9, base_y + 14
+for i in range(BARS):
+	p = i / (BARS - 1)
+	x = right - (BARS - i) * (BW + GAP)
+	for r in range(ROWS):
+		drift = 0.08 * math.sin(r * 0.9 + p * 7.0) + 0.05 * math.sin(r * 2.3 - p * 13.0)
+		# A ring that comes and goes at one column, the way the app shows one.
+		ring = 0.35 if i == 13 and r in (2, 3, 7, 8, 9) else 0.0
+		col = heat(level(p) * 0.95 + drift + ring - 0.05)
+		y = top_s + r * RH
+		d.rectangle([x, y, x + BW + GAP - 1, y + RH - 1], fill=lerp(col, BG, 0.25))
+
+for i in range(BARS):
+	p = i / (BARS - 1)
+	v = level(p)
 	bh = v * max_h
 	x = right - (BARS - i) * (BW + GAP)
 	col = ramp(p)

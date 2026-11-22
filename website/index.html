@@ -10,7 +10,7 @@
 <meta name="referrer" content="strict-origin-when-cross-origin">
 
 <title>FOHanalyzer — an open-source dual-channel RTA for front-of-house</title>
-<meta name="description" content="A native desktop dual-channel RTA for front-of-house sound engineers. Overlay a measurement mic against the console solo bus: read the room, hunt feedback, verify EQ, meter SPL. Free software under GPL-3.0.">
+<meta name="description" content="A native desktop analyser for front-of-house sound engineers: a dual-channel RTA and spectrograph of the measurement mic against the console solo bus, ring-out assist, and an SPL meter with Leq and a venue limit. Free software under GPL-3.0.">
 
 <link rel="canonical" href="https://fohanalyzer.com/">
 <link rel="icon" href="assets/img/logo.svg" type="image/svg+xml">
@@ -22,17 +22,17 @@
 <meta property="og:locale" content="en_GB">
 <meta property="og:url" content="https://fohanalyzer.com/">
 <meta property="og:title" content="FOHanalyzer — an open-source dual-channel RTA for front-of-house">
-<meta property="og:description" content="Overlay a measurement mic against the console solo bus: read the room, hunt feedback, verify EQ, meter real SPL. Free software under GPL-3.0, with no account and no telemetry.">
+<meta property="og:description" content="The measurement mic against the console solo bus on an RTA and a spectrograph, ring-out assist, and an Leq meter held against the venue limit. Free software under GPL-3.0, with no account and no telemetry.">
 <meta property="og:image" content="https://fohanalyzer.com/assets/img/og.png">
 <meta property="og:image:type" content="image/png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="The FOHanalyzer wordmark over the headline “Read the room. Hunt the ring.”, beside a spectrum-analyser bar display in cyan, lime and amber.">
+<meta property="og:image:alt" content="The FOHanalyzer wordmark over the headline “Everything FOH needs to see.”, beside a spectrum-analyser bar display over a spectrograph, in cyan, lime and amber.">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="FOHanalyzer — an open-source dual-channel RTA for front-of-house">
-<meta name="twitter:description" content="Overlay a measurement mic against the console solo bus: read the room, hunt feedback, verify EQ, meter real SPL. Free software under GPL-3.0, with no account and no telemetry.">
+<meta name="twitter:description" content="The measurement mic against the console solo bus on an RTA and a spectrograph, ring-out assist, and an Leq meter held against the venue limit. Free software under GPL-3.0, with no account and no telemetry.">
 <meta name="twitter:image" content="https://fohanalyzer.com/assets/img/og.png">
-<meta name="twitter:image:alt" content="The FOHanalyzer wordmark over the headline “Read the room. Hunt the ring.”, beside a spectrum-analyser bar display in cyan, lime and amber.">
+<meta name="twitter:image:alt" content="The FOHanalyzer wordmark over the headline “Everything FOH needs to see.”, beside a spectrum-analyser bar display over a spectrograph, in cyan, lime and amber.">
 
 <!-- Preload the two faces used above the fold; the bold cuts load normally. -->
 <link rel="preload" href="assets/fonts/Barlow-Regular.woff2" as="font" type="font/woff2" crossorigin>
@@ -96,15 +96,16 @@
 				<p class="chip"><span class="chip__dot chip__dot--pulse"></span>Free software · GPL-3.0-or-later</p>
 
 				<h1 class="hero__title">
-					Read the room.<br>
-					<span class="hero__accent">Hunt the ring.</span>
+					Everything FOH<br>
+					<span class="hero__accent">needs to see.</span>
 				</h1>
 
 				<p class="hero__lead">
-					A native desktop dual-channel RTA for front-of-house engineers. Overlay a
+					A native desktop analyser for front-of-house engineers. The
 					<strong class="t-cyan">measurement mic</strong> against the console
-					<strong class="t-amber">solo bus</strong>, and read room response against source
-					signal on one plot instead of guessing between two.
+					<strong class="t-amber">solo bus</strong> on an RTA and a spectrograph, ring-out
+					assist when something feeds back, and an SPL meter that holds the Leq against the
+					venue limit all night.
 				</p>
 
 				<div class="btn-row hero__actions">
@@ -155,7 +156,7 @@
 
 		<figure class="shot shot--float">
 			<img class="shot__img" src="assets/img/screenshot.png" width="1366" height="820"
-				alt="The FOHanalyzer window: a strip of view, trace and overlay buttons above a dual spectrum plot with a cyan measurement-mic trace over an amber solo-bus trace, and a rail on the right with the source levels, the SPL meter reading 97.1 dB LZeq over 5 minutes, and the logged feedback rings."
+				alt="The FOHanalyzer window in its split view: a dual spectrum plot with a cyan measurement-mic trace over an amber solo-bus trace, a ten-second spectrograph under it, and a rail on the right with the source levels, the SPL meter reading 97.1 dB LZeq over 5 minutes in amber just under its 98 dB limit with a 30-minute trend, and the logged feedback rings."
 				fetchpriority="high" decoding="async">
 		</figure>
 	</div>
@@ -185,7 +186,7 @@
 <section class="section section--ruled" id="features">
 	<div class="container">
 		<p class="sec-title sec-title--cyan">What it does</p>
-		<h2>Everything you reach for during a line check</h2>
+		<h2>Everything you reach for at front of house</h2>
 		<p class="mt-4 lead measure">
 			What you press sits in a strip above the plot, what you read sits in the rail beside
 			it, and what you set once lives in Preferences.
@@ -499,8 +500,8 @@
 
 			<figure>
 				<div class="shot">
-					<img class="shot__img" src="assets/img/preferences.png" width="560" height="552"
-						alt="The Preferences window on its Sources page, with a sidebar of pages: an input device and channel picker for each source, a mono or stereo choice for the solo bus, and the solo trim."
+					<img class="shot__img" src="assets/img/preferences.png" width="560" height="707"
+						alt="The Preferences window on its SPL meter page, with a sidebar of pages: the calibration of the input in use, a table of saved calibrations per interface and channel, the Leq window, the venue limit, and where the session logs go."
 						loading="lazy" decoding="async">
 				</div>
 				<figcaption class="shot__caption">Preferences — every setting, one page per area</figcaption>

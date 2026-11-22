@@ -5,9 +5,9 @@
 <h1 align="center">FOHanalyzer</h1>
 
 <p align="center">
-  A native desktop dual-channel RTA for Front-of-House sound engineers.<br>
-  Overlay a <b>measurement mic</b> against the console <b>solo bus</b> — read the room,
-  hunt feedback, verify EQ, meter SPL.
+  A native desktop analyser for Front-of-House sound engineers.<br>
+  The <b>measurement mic</b> against the console <b>solo bus</b> on an RTA and a
+  spectrograph, ring-out assist, and an SPL meter held against the venue limit.
 </p>
 
 <p align="center">
@@ -20,7 +20,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/screenshot.png" alt="The analyzer window: the action strip above the dual spectrum plot, and the rail with source levels, the SPL meter and the logged rings" width="100%">
+  <img src="docs/screenshot.png" alt="The analyzer window in its split view: the action strip above the dual spectrum plot and the spectrograph, and the rail with source levels, the SPL meter against its venue limit, and the logged rings" width="100%">
 </p>
 
 ## What it does
@@ -191,7 +191,7 @@ Preferences is a commit step: the controls bind straight to the shared state tha
 persisted anyway, so there is no OK/Cancel and nothing to apply.
 
 <p align="center">
-  <img src="docs/preferences.png" alt="The preferences window on its Sources page: input and channel pickers for each source, and the solo trim" width="500">
+  <img src="docs/preferences.png" alt="The preferences window on its SPL meter page: the calibration per input, the Leq window and the venue limit" width="500">
 </p>
 
 ### Saved settings
@@ -383,8 +383,9 @@ Pass a number for a longer delay (`PROBE=20`), e.g. to snapshot *after* a hot re
 
 **Demo mode.** `FOH_DEMO=true` starts with a show in progress instead of the stored settings
 and real inputs: named live inputs, a calibrated SPL meter partway through its window, two
-logged rings and a reference. The screenshots in this file and on the website are
-`FOH_DEMO=true PROBE=7 PROBE_PREFS=0 mvn -q javafx:run`, with the main shot cropped to
+logged rings, a reference, and a venue limit with half an hour of Leq behind it, in the split
+view. The screenshots in this file and on the website are
+`FOH_DEMO=true PROBE=13 PROBE_PREFS=1 mvn -q javafx:run`, with the main shot cropped to
 2732×1640.
 
 ## Licence

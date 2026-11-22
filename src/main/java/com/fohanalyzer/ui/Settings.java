@@ -26,7 +26,12 @@ public final class Settings
 {
 	private static final Logger log = LoggerFactory.getLogger(Settings.class);
 
+	/**
+	 * The one calibration offset of builds before calibrations were per input;
+	 * read once to migrate it, then removed.
+	 */
 	private static final String SPL_OFFSET = "splOffset";
+	private static final String CALIBRATIONS = "splCalibrations";
 	private static final String CAL_REF_SPL = "calRefSpl";
 	private static final String SHOW_SPL = "showSpl";
 	private static final String LEQ_WINDOW = "leqWindow";
@@ -83,7 +88,16 @@ public final class Settings
 	public static final int MIN_PORT = 1024;
 	public static final int MAX_PORT = 65535;
 
+	/** Range accepted for a calibration offset. */
+	public static final double MIN_SPL_OFFSET = -200;
+	public static final double MAX_SPL_OFFSET = 200;
+
 	private final Preferences prefs;
+	/**
+	 * A single offset from an older build still waiting for a live mic to land
+	 * on; NaN once migrated or if there was none.
+	 */
+	private double legacyOffset = Double.NaN;
 
 	public Settings()
 	{
@@ -134,6 +148,8 @@ public final class Settings
 		// Read the defaults off a fresh AppState rather than repeating them
 		// here, so they cannot drift from the field initialisers.
 		AppState d = new AppState();
+		legacyOffset = Double.NaN;
+		state.calibrations.clear();
 		state.splOffset.set(d.splOffset.get());
 		state.calRefSpl.set(d.calRefSpl.get());
 		state.showSpl.set(d.showSpl.get());
@@ -227,8 +243,10 @@ public final class Settings
 	{
 		// Each property's current value is its own default, so AppState stays
 		// the single source of truth for what "unset" means.
-		st.splOffset.set(clamp(prefs.getDouble(SPL_OFFSET, st.splOffset.get()), -200, 200,
-			st.splOffset.get()));
+		st.calibrations.setAll(Calibration.decode(prefs.get(CALIBRATIONS, null), MIN_SPL_OFFSET,
+			MAX_SPL_OFFSET));
+		double legacy = clamp(prefs.getDouble(SPL_OFFSET, 0), MIN_SPL_OFFSET, MAX_SPL_OFFSET, 0);
+		legacyOffset = legacy != 0 ? legacy : Double.NaN;
 		st.calRefSpl.set(clamp(prefs.getDouble(CAL_REF_SPL, st.calRefSpl.get()), 0, 200,
 			st.calRefSpl.get()));
 		st.smoothing.set(clamp(prefs.getDouble(SMOOTHING, st.smoothing.get()), 0, 0.95,
@@ -241,7 +259,8 @@ public final class Settings
 		// A store from before this setting existed has no entry for it; keep
 		// the meter of whoever had already calibrated rather than hiding it on
 		// them after an update.
-		st.showSpl.set(prefs.getBoolean(SHOW_SPL, st.showSpl.get() || st.splOffset.get() != 0));
+		st.showSpl.set(prefs.getBoolean(SHOW_SPL,
+			st.showSpl.get() || !Double.isNaN(legacyOffset) || !st.calibrations.isEmpty()));
 
 		int frac = prefs.getInt(FRAC, st.frac.get());
 		if (FRACTIONS.contains(frac)) st.frac.set(frac);
@@ -273,6 +292,7 @@ public final class Settings
 
 		restoreSource(st, true);
 		restoreSource(st, false);
+		migrateLegacyOffset(st);
 	}
 
 	/**
@@ -300,6 +320,36 @@ public final class Settings
 		idx.set(Math.max(0, prefs.getInt(isMic ? MIC_CHAN_IDX : SOLO_CHAN_IDX, 0)));
 	}
 
+	/**
+	 * Give the single offset of an older build to the live mic input in use, so
+	 * nobody loses a calibration on upgrade. Until a live mic is selected it
+	 * stays stored and waits; an input already calibrated keeps its own.
+	 */
+	private void migrateLegacyOffset(AppState st)
+	{
+		if (Double.isNaN(legacyOffset) || !st.isMicLive()) return;
+
+		// The date it was made was never stored.
+		if (st.micCalibration() == null) st.calibrate(legacyOffset, Double.NaN, null);
+		legacyOffset = Double.NaN;
+		prefs.remove(SPL_OFFSET);
+		flush();
+	}
+
+	private void putCalibrations(String encoded)
+	{
+		// A Preferences value holds 8 KB: around a hundred inputs. Past that
+		// the
+		// new one is kept for this run and the stored list is left as it was.
+		if (encoded.length() > Preferences.MAX_VALUE_LENGTH)
+		{
+			log.warn("too many SPL calibrations to store ({} characters); the newest is not saved",
+				encoded.length());
+			return;
+		}
+		prefs.put(CALIBRATIONS, encoded);
+	}
+
 	public static boolean isValidPort(int port)
 	{
 		return port >= MIN_PORT && port <= MAX_PORT;
@@ -323,10 +373,14 @@ public final class Settings
 		// Calibration is user-initiated, rare, and the most expensive to redo,
 		// so it is flushed the moment it changes rather than waiting for the
 		// periodic sync.
-		st.splOffset.addListener((o, a, v) -> {
-			prefs.putDouble(SPL_OFFSET, v.doubleValue());
+		st.calibrations.addListener((javafx.collections.ListChangeListener<Calibration>)c -> {
+			if (st.calibrations.isEmpty()) prefs.remove(CALIBRATIONS);
+			else
+				putCalibrations(Calibration.encode(st.calibrations));
 			flush();
 		});
+		st.micChan.addListener((o, a, v) -> migrateLegacyOffset(st));
+		st.micChanIdx.addListener((o, a, v) -> migrateLegacyOffset(st));
 		st.calRefSpl.addListener((o, a, v) -> {
 			prefs.putDouble(CAL_REF_SPL, v.doubleValue());
 			flush();

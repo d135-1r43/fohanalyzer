@@ -288,6 +288,21 @@
     -fx-text-fill: -txt; -fx-font-family: "IBM Plex Mono", monospace; -fx-font-size: 13px;
 }
 
+/* ---- per-input SPL calibration (preferences) ---- */
+.cal-state { -fx-font-family: "IBM Plex Mono", monospace; -fx-font-size: 11px; -fx-text-fill: -lime; }
+.cal-state.cal-none { -fx-text-fill: -amber; }
+.cal-head { -fx-font-family: "IBM Plex Mono", monospace; -fx-font-size: 9px; -fx-text-fill: -txt-mut; }
+.cal-cell {
+    -fx-font-family: "IBM Plex Mono", monospace; -fx-font-size: 11px; -fx-text-fill: -txt-dim;
+    -fx-padding: 3 0 3 0; -fx-text-overrun: ellipsis;
+}
+.cal-cell.cal-pick { -fx-cursor: hand; }
+.cal-cell.cal-pick:hover { -fx-text-fill: -txt; }
+.cal-cell.cal-current { -fx-text-fill: -txt; -fx-font-weight: bold; }
+.cal-cell.cal-absent { -fx-opacity: 0.55; }
+.cal-stale, .cal-state.cal-stale, .cal-cell.cal-stale { -fx-text-fill: -amber; }
+.cal-forget { -fx-padding: 0 6 0 6; -fx-font-size: 11px; }
+
 /* ---- feedback log ---- */
 .fb-row {
     -fx-background-color: -panel-2; -fx-border-color: -line-soft;

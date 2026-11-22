@@ -11,6 +11,7 @@ import javafx.beans.property.*;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
+import java.time.LocalDate;
 import java.util.List;
 
 /**
@@ -106,7 +107,16 @@ public final class AppState
 
 	// Readouts / SPL
 	public final ObjectProperty<Stats> stats = new SimpleObjectProperty<>(new Stats(0, -90, -90, -90, -90, 0, null));
+	/**
+	 * The calibration offset of the mic input in use: 0 is not calibrated.
+	 * Loaded from {@link #calibrations} whenever the mic input changes, and a
+	 * nudge to it is written back to that input's calibration.
+	 */
 	public final DoubleProperty splOffset = new SimpleDoubleProperty(0);
+	/** Every input calibrated so far, one per interface and channel. */
+	public final ObservableList<Calibration> calibrations = FXCollections.observableArrayList();
+	/** Set while {@link #splOffset} is being loaded, not changed by hand. */
+	private boolean loadingOffset;
 	public final DoubleProperty calRefSpl = new SimpleDoubleProperty(94);
 	/**
 	 * Show the SPL readout in the main window. Off by default: uncalibrated it
@@ -182,6 +192,90 @@ public final class AppState
 	// Live capture sources (plain, non-observable)
 	public AudioSource micSource;
 	public AudioSource soloSource;
+
+	public AppState()
+	{
+		micChan.addListener((o, a, b) -> loadCalibration());
+		micChanIdx.addListener((o, a, b) -> loadCalibration());
+		calibrations.addListener((javafx.collections.ListChangeListener<Calibration>)c -> loadCalibration());
+		splOffset.addListener((o, a, b) -> {
+			if (loadingOffset) return;
+			Calibration cal = micCalibration();
+			// A nudge moves the calibration it is nudging. Zero would read as
+			// not calibrated; clearing is its own action.
+			if (cal != null && b.doubleValue() != 0) put(cal.withOffset(b.doubleValue()));
+		});
+	}
+
+	/** The interface the mic is on, or null for a simulated input. */
+	public String micDeviceId()
+	{
+		return isMicLive() ? micChan.get().substring("live:".length()) : null;
+	}
+
+	/** The calibration of the mic input in use, or null if it has none. */
+	public Calibration micCalibration()
+	{
+		String id = micDeviceId();
+		if (id == null) return null;
+
+		int channel = micChanIdx.get();
+		return calibrations.stream().filter(c -> c.isFor(id, channel)).findFirst().orElse(null);
+	}
+
+	/**
+	 * Calibrate the mic input in use to {@code offsetDb}, against a reference
+	 * of {@code refDb} (NaN if not known) on {@code date}. Nothing for a
+	 * simulated input.
+	 */
+	public void calibrate(double offsetDb, double refDb, LocalDate date)
+	{
+		String id = micDeviceId();
+		if (id == null) return;
+
+		String name = audioDevices.stream().filter(d -> d.id().equals(id)).findFirst()
+			.map(AudioDevice::label).orElse(id);
+		put(new Calibration(id, micChanIdx.get(), name, offsetDb, date, refDb));
+	}
+
+	/** Forget the calibration of the mic input in use. */
+	public void clearCalibration()
+	{
+		Calibration cal = micCalibration();
+		if (cal != null) calibrations.remove(cal);
+	}
+
+	/** Add {@code cal}, or replace the one of the same input in its place. */
+	private void put(Calibration cal)
+	{
+		for (int i = 0; i < calibrations.size(); i++)
+		{
+			if (calibrations.get(i).isFor(cal.deviceId(), cal.channel()))
+			{
+				calibrations.set(i, cal);
+				return;
+			}
+		}
+		calibrations.add(cal);
+	}
+
+	/**
+	 * The offset of the input in use, or none: an input never inherits
+	 * another's calibration.
+	 */
+	private void loadCalibration()
+	{
+		Calibration cal = micCalibration();
+		loadingOffset = true;
+		try
+		{
+			splOffset.set(cal != null ? cal.offsetDb() : 0);
+		}
+		finally
+		{
+			loadingOffset = false;
+		}
+	}
 
 	public boolean isMicLive()
 	{

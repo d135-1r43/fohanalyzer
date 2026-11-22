@@ -55,7 +55,10 @@ public final class Demo
 		state.soloStereo.set(true);
 		state.soloTrim.set(-3.5);
 
-		state.splOffset.set(CALIBRATION);
+		state.calibrate(CALIBRATION, 94, java.time.LocalDate.now().minusDays(12));
+		// A second rig, last used a while ago, for the saved calibrations.
+		state.calibrations.add(new com.fohanalyzer.ui.Calibration("demo-wing", 31, "Behringer WING", 121.7,
+			java.time.LocalDate.now().minusDays(47), 94));
 		state.showSpl.set(true);
 		state.leqWindow.set(300);
 		feedProgramme(state);

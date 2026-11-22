@@ -31,7 +31,9 @@
 - **Ring-out assist.** With a live mic, *Detect ring* reports the actual ringing
   fundamental — not the band centre a peak marker rounds to — and suggests a cut.
 - **SPL metering.** Calibrate against a known reference level and the readout is real dB
-  SPL rather than dBFS. The meter shows the Leq over a window you choose (10 s to 60 min),
+  SPL rather than dBFS. Each interface and channel keeps its own calibration, so moving
+  between rigs brings the right offset along, and an input never calibrated reads dBFS
+  rather than borrowing another's. The meter shows the Leq over a window you choose (10 s to 60 min),
   the Fast level, and the maximum and peak since a reset, and logs every second of the
   session to a CSV under `~/Documents/FOHanalyzer/SPL logs`. Nothing is weighted yet, so the
   figures are labelled Z (`LZeq`, `LZF`, `LZpeak`).
@@ -196,8 +198,9 @@ persisted anyway, so there is no OK/Cancel and nothing to apply.
 
 SPL calibration, the selected inputs and channels, and the analysis/view options persist
 between launches via `java.util.prefs.Preferences` — no config file of our own, no
-dependency. Calibration is flushed to disk the moment it changes, since it is the expensive
-thing to redo; the rest ride the periodic sync plus a flush on window close.
+dependency. SPL calibrations are kept per interface and channel, and a calibration from a
+build that had only one is moved onto the first live mic it finds. Calibration is flushed to
+disk the moment it changes, since it is the expensive thing to redo; the rest ride the periodic sync plus a flush on window close.
 
 Stored values are validated on the way in: a resolution or averaging setting the segmented
 controls cannot display, or a smoothing value outside the slider's range, falls back to the

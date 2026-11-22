@@ -6,6 +6,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.time.LocalDate;
 import java.util.UUID;
 import java.util.prefs.Preferences;
 
@@ -43,7 +44,6 @@ class SettingsTest
 	{
 		AppState first = new AppState();
 		settings.bind(first);
-		first.splOffset.set(112.5);
 		first.calRefSpl.set(100);
 		first.frac.set(24);
 		first.smoothing.set(0.4);
@@ -64,7 +64,6 @@ class SettingsTest
 		AppState next = new AppState();
 		new Settings(node).bind(next);
 
-		assertEquals(112.5, next.splOffset.get(), 1e-9);
 		assertEquals(100, next.calRefSpl.get(), 1e-9);
 		assertEquals(24, next.frac.get());
 		assertEquals(0.4, next.smoothing.get(), 1e-9);
@@ -207,6 +206,160 @@ class SettingsTest
 			settings.reset(st);
 
 			assertFalse(st.showSpl.get());
+		}
+	}
+
+	@Nested
+	class CalibrationPerInput
+	{
+		static final String SCARLETT = "Scarlett 18i20";
+		static final String WING = "WING";
+
+		/** A launch with {@code devices} plugged in. */
+		private AppState launch(String... devices)
+		{
+			AppState st = new AppState();
+			for (String d : devices)
+				st.audioDevices.add(new AudioDevice(d, d + " USB", null));
+			new Settings(node).bind(st);
+			return st;
+		}
+
+		private void select(AppState st, String device, int channel)
+		{
+			st.micChan.set("live:" + device);
+			st.micChanIdx.set(channel);
+		}
+
+		@Test
+		void aCalibrationComesBackWithItsInput()
+		{
+			AppState first = launch(SCARLETT);
+			select(first, SCARLETT, 2);
+			first.calibrate(118.4, 94, LocalDate.of(2026, 11, 3));
+
+			AppState next = launch(SCARLETT);
+
+			assertEquals(118.4, next.splOffset.get(), 1e-9);
+			Calibration cal = next.micCalibration();
+			assertEquals(LocalDate.of(2026, 11, 3), cal.date());
+			assertEquals(94, cal.refDb(), 1e-9);
+			assertEquals("Scarlett 18i20 USB", cal.deviceName());
+		}
+
+		@Test
+		void anotherInputNeverInheritsTheOffset()
+		{
+			AppState st = launch(SCARLETT, WING);
+			select(st, SCARLETT, 2);
+			st.calibrate(118.4, 94, LocalDate.now());
+
+			st.micChanIdx.set(3);
+			assertEquals(0, st.splOffset.get(), "another channel of the same interface");
+
+			select(st, WING, 2);
+			assertEquals(0, st.splOffset.get(), "the same channel of another interface");
+
+			st.micChan.set(AppState.MIC_INPUTS.getFirst().id());
+			assertEquals(0, st.splOffset.get(), "a simulated input");
+
+			select(st, SCARLETT, 2);
+			assertEquals(118.4, st.splOffset.get(), 1e-9, "switching back brings it back");
+		}
+
+		@Test
+		void aMissingInterfaceKeepsItsCalibrationStored()
+		{
+			AppState first = launch(SCARLETT);
+			select(first, SCARLETT, 2);
+			first.calibrate(118.4, 94, LocalDate.now());
+
+			AppState away = launch(WING);
+			assertFalse(away.isMicLive());
+			assertEquals(0, away.splOffset.get());
+			assertEquals(1, away.calibrations.size(), "still listed for when it comes back");
+
+			AppState back = launch(SCARLETT);
+			assertEquals(118.4, back.splOffset.get(), 1e-9);
+		}
+
+		@Test
+		void aNudgeMovesTheInputsCalibration()
+		{
+			AppState first = launch(SCARLETT);
+			select(first, SCARLETT, 2);
+			first.calibrate(118.4, 94, LocalDate.of(2026, 11, 3));
+			first.splOffset.set(119.0);
+
+			AppState next = launch(SCARLETT);
+
+			assertEquals(119.0, next.splOffset.get(), 1e-9);
+			assertEquals(LocalDate.of(2026, 11, 3), next.micCalibration().date(), "a nudge is not a new calibration");
+		}
+
+		@Test
+		void clearingForgetsOnlyThatInput()
+		{
+			AppState st = launch(SCARLETT, WING);
+			select(st, WING, 31);
+			st.calibrate(121.7, 94, LocalDate.now());
+			select(st, SCARLETT, 2);
+			st.calibrate(118.4, 94, LocalDate.now());
+
+			st.clearCalibration();
+
+			assertEquals(0, st.splOffset.get());
+			AppState next = launch(SCARLETT, WING);
+			assertEquals(1, next.calibrations.size());
+			assertEquals(WING, next.calibrations.getFirst().deviceId());
+		}
+
+		@Test
+		void theOldSingleOffsetMovesToTheInputInUse()
+		{
+			node.putDouble("splOffset", 112.5);
+			node.put("micChan", "live:" + SCARLETT);
+			node.putInt("micChanIdx", 5);
+
+			AppState st = launch(SCARLETT);
+
+			assertEquals(112.5, st.splOffset.get(), 1e-9);
+			Calibration cal = st.micCalibration();
+			assertEquals(5, cal.channel());
+			assertNull(cal.date(), "when it was made was never stored");
+			assertNull(node.get("splOffset", null), "migrated once, then gone");
+		}
+
+		@Test
+		void theOldSingleOffsetWaitsForALiveMic()
+		{
+			node.putDouble("splOffset", 112.5);
+
+			AppState st = launch(SCARLETT);
+			assertEquals(0, st.splOffset.get(), "a simulated input is not calibrated");
+			assertTrue(st.calibrations.isEmpty());
+
+			select(st, SCARLETT, 0);
+
+			assertEquals(112.5, st.splOffset.get(), 1e-9);
+			assertNull(node.get("splOffset", null));
+		}
+
+		@Test
+		void resetClearsEveryCalibration()
+		{
+			Settings s = new Settings(node);
+			AppState st = new AppState();
+			st.audioDevices.add(new AudioDevice(SCARLETT, SCARLETT, null));
+			s.bind(st);
+			select(st, SCARLETT, 2);
+			st.calibrate(118.4, 94, LocalDate.now());
+
+			s.reset(st);
+
+			assertTrue(st.calibrations.isEmpty());
+			assertEquals(0, st.splOffset.get());
+			assertTrue(launch(SCARLETT).calibrations.isEmpty());
 		}
 	}
 

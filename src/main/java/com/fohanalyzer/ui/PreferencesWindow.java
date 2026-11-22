@@ -21,6 +21,9 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.Tooltip;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
+import javafx.collections.ListChangeListener;
+import javafx.scene.layout.ColumnConstraints;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
@@ -37,6 +40,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -64,10 +68,6 @@ public final class PreferencesWindow
 	 */
 	private static final double WIDTH = 420;
 	private static final double NAV_WIDTH = 140;
-
-	/** The range {@link Settings} accepts for the calibration offset. */
-	private static final double SPL_OFFSET_MIN = -200;
-	private static final double SPL_OFFSET_MAX = 200;
 
 	/** dB a click or scroll moves the spectrograph's colour range. */
 	private static final double SPECTRO_RANGE_STEP = 5;
@@ -319,19 +319,58 @@ public final class PreferencesWindow
 		Button calBtn = new Button("Calibrate");
 		calBtn.getStyleClass().add("mini-btn");
 		calBtn.setOnAction(e -> calibrate());
-		HBox calRow = new HBox(8, ref, refLbl, calBtn);
+		Button clearBtn = new Button("Clear");
+		clearBtn.getStyleClass().add("mini-btn");
+		clearBtn.setOnAction(e -> state.clearCalibration());
+		HBox calRow = new HBox(8, ref, refLbl, calBtn, clearBtn);
 		calRow.setAlignment(Pos.CENTER_LEFT);
 
-		Label status = new Label();
-		status.getStyleClass().add("hint");
-		Runnable refreshStatus = () -> {
-			double off = state.splOffset.get();
-			status.setText(off == 0
-				? "Not calibrated — the readout shows dBFS + 0."
-				: String.format(Locale.US, "Calibrated · offset %+.1f dB", off));
+		// The input in use and its calibration: an input that has none says
+		// so, rather than borrowing another rig's offset.
+		Label inputLbl = new Label();
+		inputLbl.getStyleClass().add("ctl-lbl");
+		inputLbl.setMaxWidth(Double.MAX_VALUE);
+		Label calState = new Label();
+		calState.getStyleClass().add("cal-state");
+
+		// For when the reading drifts from a hand-held meter. It moves the
+		// input's calibration itself, so there is one number, not two that
+		// stack; an uncalibrated input has nothing to nudge.
+		Label nudgeLbl = new Label("Offset");
+		nudgeLbl.getStyleClass().add("ctl-lbl");
+		Tooltip.install(nudgeLbl, new Tooltip("Nudge it to match a reference meter"));
+		Region nudgeSp = new Region();
+		HBox.setHgrow(nudgeSp, Priority.ALWAYS);
+		HBox nudgeRow = new HBox(nudgeLbl, nudgeSp,
+			new Trim(state.splOffset, Settings.MIN_SPL_OFFSET, Settings.MAX_SPL_OFFSET, Trim.STEP, Double.NaN, Trim::fmtDb));
+		nudgeRow.setAlignment(Pos.CENTER_LEFT);
+
+		Runnable refreshInput = () -> {
+			Calibration cal = state.micCalibration();
+			String id = state.micDeviceId();
+			inputLbl.setText(id == null ? "Simulated input"
+				: deviceName(id) + " · Ch " + (state.micChanIdx.get() + 1));
+			calState.getStyleClass().removeAll("cal-none", "cal-stale");
+			if (cal == null)
+			{
+				calState.setText("not calibrated · the readout shows dBFS");
+				calState.getStyleClass().add("cal-none");
+			}
+			else
+			{
+				boolean stale = cal.isStale(LocalDate.now());
+				String against = cal.refText();
+				calState.setText((stale ? "⚠ " : "") + "calibrated " + cal.dateText()
+					+ (against.isEmpty() ? "" : " · " + against));
+				if (stale) calState.getStyleClass().add("cal-stale");
+			}
+			nudgeRow.setDisable(cal == null);
+			clearBtn.setDisable(cal == null);
 		};
-		state.splOffset.addListener((o, a, b) -> refreshStatus.run());
-		refreshStatus.run();
+		state.calibrations.addListener((ListChangeListener<Calibration>)c -> refreshInput.run());
+		state.micChan.addListener((o, a, b) -> refreshInput.run());
+		state.micChanIdx.addListener((o, a, b) -> refreshInput.run());
+		refreshInput.run();
 
 		Label howTo = hint("Play a known reference level, enter it, then tap Calibrate.");
 
@@ -349,18 +388,6 @@ public final class PreferencesWindow
 		HBox.setHgrow(sp, Priority.ALWAYS);
 		HBox showRow = new HBox(showLbl, sp, new Toggle(state.showSpl, "#a3e635"));
 		showRow.setAlignment(Pos.CENTER_LEFT);
-
-		// For when the reading drifts from a hand-held meter. It moves the
-		// calibration offset itself, so there is one number, not two that
-		// stack; an uncalibrated meter has nothing to nudge.
-		Label nudgeLbl = new Label("Match a reference meter");
-		nudgeLbl.getStyleClass().add("ctl-lbl");
-		Region nudgeSp = new Region();
-		HBox.setHgrow(nudgeSp, Priority.ALWAYS);
-		HBox nudgeRow = new HBox(nudgeLbl, nudgeSp,
-			new Trim(state.splOffset, SPL_OFFSET_MIN, SPL_OFFSET_MAX, Trim.STEP, Double.NaN, Trim::fmtDb));
-		nudgeRow.setAlignment(Pos.CENTER_LEFT);
-		nudgeRow.disableProperty().bind(state.splOffset.isEqualTo(0));
 
 		Label winLbl = new Label("Leq window");
 		winLbl.getStyleClass().add("ctl-lbl");
@@ -408,8 +435,9 @@ public final class PreferencesWindow
 		Label logsHint = hint("While the meter is calibrated, every second is written to a CSV in "
 			+ SplLog.defaultDir() + ", one file per session.");
 
-		VBox sec = section("SPL meter", showRow, needsLive, calRow, howTo, status, nudgeRow, winLbl, window,
-			limitRow, limitValRow, limitHint, logsRow, logsHint);
+		VBox sec = section("SPL meter", showRow, label("Calibration · this input"), inputLbl, calState,
+			needsLive, nudgeRow, calRow, howTo, label("Saved calibrations"), savedCalibrations(), winLbl,
+			window, limitRow, limitValRow, limitHint, logsRow, logsHint);
 
 		// Only a live mic produces the RMS the calibration is computed from.
 		// Just the controls are disabled: the notice and the status stay
@@ -424,6 +452,100 @@ public final class PreferencesWindow
 		state.micChan.addListener((o, a, b) -> vis.run());
 		vis.run();
 		return sec;
+	}
+
+	/**
+	 * Every input calibrated so far. Clicking one that is plugged in switches
+	 * the mic to it; × forgets it, for a rig that is gone for good.
+	 */
+	private VBox savedCalibrations()
+	{
+		VBox box = new VBox(2);
+		Runnable rebuild = () -> {
+			box.getChildren().clear();
+			if (state.calibrations.isEmpty())
+			{
+				box.getChildren().add(hint("None yet. Each input keeps its own once calibrated."));
+				return;
+			}
+
+			GridPane grid = new GridPane();
+			grid.getStyleClass().add("cal-table");
+			grid.setHgap(10);
+			grid.setVgap(2);
+			ColumnConstraints name = new ColumnConstraints();
+			name.setHgrow(Priority.ALWAYS);
+			name.setMinWidth(0);
+			ColumnConstraints right = new ColumnConstraints();
+			right.setHalignment(javafx.geometry.HPos.RIGHT);
+			grid.getColumnConstraints().addAll(name, right, right, right, new ColumnConstraints());
+			String[] heads = { "Interface", "Ch", "Offset", "Calibrated" };
+			for (int i = 0; i < heads.length; i++)
+			{
+				Label h = new Label(heads[i]);
+				h.getStyleClass().add("cal-head");
+				grid.add(h, i, 0);
+			}
+
+			LocalDate today = LocalDate.now();
+			Calibration current = state.micCalibration();
+			int row = 1;
+			for (Calibration cal : state.calibrations)
+			{
+				boolean present = state.audioDevices.stream().anyMatch(d -> d.id().equals(cal.deviceId()));
+				Label dev = calCell(cal.deviceName());
+				dev.setMinWidth(0);
+				Label ch = calCell(Integer.toString(cal.channel() + 1));
+				Label off = calCell(Trim.fmtDb(cal.offsetDb()));
+				Label when = calCell(cal.date() == null ? "—" : (cal.isStale(today) ? "⚠ " : "") + cal.dateText());
+				if (cal.isStale(today)) when.getStyleClass().add("cal-stale");
+				Button forget = new Button("×");
+				forget.getStyleClass().addAll("mini-btn", "cal-forget");
+				Tooltip.install(forget, new Tooltip("Forget this calibration"));
+				forget.setOnAction(e -> state.calibrations.remove(cal));
+
+				Label[] cells = { dev, ch, off, when };
+				for (int i = 0; i < cells.length; i++)
+				{
+					Label c = cells[i];
+					if (cal.equals(current)) c.getStyleClass().add("cal-current");
+					if (!present) c.getStyleClass().add("cal-absent");
+					if (present && !cal.equals(current))
+					{
+						c.getStyleClass().add("cal-pick");
+						c.setOnMouseClicked(e -> {
+							state.micChan.set("live:" + cal.deviceId());
+							state.micChanIdx.set(cal.channel());
+						});
+					}
+					grid.add(c, i, row);
+				}
+				grid.add(forget, 4, row);
+				row++;
+			}
+			box.getChildren().add(grid);
+			box.getChildren().add(hint("Click an input that is plugged in to switch the mic to it."
+				+ " A ⚠ date is over " + Calibration.STALE_AFTER_DAYS + " days old."));
+		};
+		state.calibrations.addListener((ListChangeListener<Calibration>)c -> rebuild.run());
+		state.micChan.addListener((o, a, b) -> rebuild.run());
+		state.micChanIdx.addListener((o, a, b) -> rebuild.run());
+		state.audioDevices.addListener((ListChangeListener<com.fohanalyzer.audio.AudioDevice>)c -> rebuild.run());
+		rebuild.run();
+		return box;
+	}
+
+	private static Label calCell(String text)
+	{
+		Label l = new Label(text);
+		l.getStyleClass().add("cal-cell");
+		return l;
+	}
+
+	private String deviceName(String id)
+	{
+		return state.audioDevices.stream().filter(d -> d.id().equals(id)).findFirst()
+			.map(com.fohanalyzer.audio.AudioDevice::label).orElse(id);
 	}
 
 	private void showSplLogs()
@@ -710,7 +832,8 @@ public final class PreferencesWindow
 	{
 		Double rms = state.stats.get().micRmsDbfs();
 		if (rms == null) return;
-		state.splOffset.set(state.calRefSpl.get() - rms);
+		double ref = state.calRefSpl.get();
+		state.calibrate(ref - rms, ref, LocalDate.now());
 		// Whoever calibrates wants to read the result.
 		state.showSpl.set(true);
 	}

@@ -55,6 +55,19 @@ public class MainApp extends Application
 		return t;
 	});
 
+	/**
+	 * Input changes are applied here, one at a time and in the order they were
+	 * made. Restoring settings picks the device and then its channel, which is
+	 * two requests in quick succession; on a thread each, the stale one could
+	 * land last and quietly move the line back to the old channel while the
+	 * card shows the new one.
+	 */
+	private final ExecutorService audioControl = Executors.newSingleThreadExecutor(r -> {
+		Thread t = new Thread(r, "audio-connect");
+		t.setDaemon(true);
+		return t;
+	});
+
 	private Label peakVal;
 	private Label micVal;
 	private Label soloVal;
@@ -315,7 +328,7 @@ public class MainApp extends Application
 			}
 			AudioSource source = src;
 			// Open the line off the FX thread; report the channel count back.
-			new Thread(() -> {
+			audioControl.execute(() -> {
 				int count = source.connect(dev.get(), idx, stereo);
 				Platform.runLater(() -> {
 					(isMic ? state.micChanCount : state.soloChanCount).set(count);
@@ -329,12 +342,14 @@ public class MainApp extends Application
 						(isMic ? state.micChanIdx : state.soloChanIdx).set(last);
 					}
 				});
-			}, "audio-connect").start();
+			});
 		}
 		else
 		{
 			AudioSource src = isMic ? state.micSource : state.soloSource;
-			if (src != null) src.disconnect();
+			// Queued behind any connect still pending, so that one cannot
+			// reopen the line after this closes it.
+			if (src != null) audioControl.execute(src::disconnect);
 			if (isMic) state.micSource = null;
 			else
 				state.soloSource = null;

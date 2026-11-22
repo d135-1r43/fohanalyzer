@@ -3,6 +3,14 @@
 Notable changes to FOHanalyzer, newest first. Each version links to its GitHub release, which
 carries the `.dmg`. Dependency bumps are summarised rather than listed one by one.
 
+## [Unreleased]
+
+### Fixed
+
+- A live input could show nothing after a restart: the card named the right channel, but the
+  analyser was reading a different one. Input changes are now applied in the order they were
+  made, so the channel shown is always the one being read.
+
 ## [2.6.0] — 2026-10-18
 
 ### Added
@@ -73,6 +81,7 @@ The first release of the JavaFX version, shipped as a self-contained macOS bundl
 - Logs through SLF4J instead of the console.
 - Licensed under GPL-3.0-or-later.
 
+[Unreleased]: https://github.com/d135-1r43/fohanalyzer-java/compare/fohanalyzer-java-2.6.0...HEAD
 [2.6.0]: https://github.com/d135-1r43/fohanalyzer-java/releases/tag/fohanalyzer-java-2.6.0
 [2.5.0]: https://github.com/d135-1r43/fohanalyzer-java/releases/tag/fohanalyzer-java-2.5.0
 [2.4.0]: https://github.com/d135-1r43/fohanalyzer-java/releases/tag/fohanalyzer-java-2.4.0

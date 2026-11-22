@@ -7,7 +7,6 @@ import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.StringProperty;
 import javafx.collections.ObservableList;
 import javafx.geometry.Pos;
-import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
@@ -16,50 +15,47 @@ import javafx.scene.shape.Circle;
 import java.util.List;
 
 /**
- * A source panel: indicator dot, name, on/off toggle, level meter, and a
- * marker-select pill.
+ * A read-only source panel for the rail: indicator dot, name, level, what feeds
+ * it, a level meter, and a line of detail the rail fills in.
  *
  * <p>
- * Which device feeds the source is chosen once per rig, so the picker itself
- * lives in the preferences window. What the card keeps is a read-only line
- * naming the current selection — during a show you still need to see at a
- * glance whether a trace is a live input or a simulation, and on which channel.
+ * Nothing here is a control. Which device feeds the source is set in the
+ * preferences window and whether the trace is drawn in the strip above the
+ * plot; the card only shows the outcome — during a show you still need to see
+ * at a glance whether a trace is a live input or a simulation, and on which
+ * channel. A source switched off is dimmed.
  */
 public final class SourceCard extends VBox
 {
 	public final Meter meter;
-
-	public SourceCard(String name, String color,
-		BooleanProperty on, StringProperty markerSource, String markerId,
-		List<InputPreset> options, StringProperty chan,
-		IntegerProperty chanIdx, IntegerProperty chanCount,
-		ObservableList<AudioDevice> audioDevices)
-	{
-		this(name, color, on, markerSource, markerId, options, chan, chanIdx, chanCount,
-			audioDevices, null);
-	}
+	/** The level figure beside the name. */
+	public final Label level;
+	/** Free detail under the meter, such as the solo trim in effect. */
+	public final Label detailLeft;
+	public final Label detailRight;
 
 	/**
 	 * @param stereo
 	 *            when non-null and set, the selection line reads the pair the
 	 *            source is merging. Null for an always-mono source.
 	 */
-	public SourceCard(String name, String color,
-		BooleanProperty on, StringProperty markerSource, String markerId,
+	public SourceCard(String name, String color, BooleanProperty on,
 		List<InputPreset> options, StringProperty chan,
 		IntegerProperty chanIdx, IntegerProperty chanCount,
 		ObservableList<AudioDevice> audioDevices, BooleanProperty stereo)
 	{
 		getStyleClass().add("src-card");
-		setSpacing(9);
+		setSpacing(7);
 
 		Circle dot = new Circle(4.5, Color.web(color));
 		Label nameLbl = new Label(name);
 		nameLbl.getStyleClass().add("src-name");
 		HBox.setHgrow(nameLbl, Priority.ALWAYS);
 		nameLbl.setMaxWidth(Double.MAX_VALUE);
-		Toggle toggle = new Toggle(on, color);
-		HBox top = new HBox(10, dot, nameLbl, toggle);
+		level = new Label("—");
+		level.getStyleClass().add("src-level");
+		level.setStyle("-fx-text-fill:" + color + ";");
+		HBox top = new HBox(10, dot, nameLbl, level);
 		top.setAlignment(Pos.CENTER_LEFT);
 
 		Label tag = new Label();
@@ -91,26 +87,19 @@ public final class SourceCard extends VBox
 		refreshSel.run();
 
 		meter = new Meter(color);
-		Button markerPill = new Button();
-		markerPill.getStyleClass().add("marker-pill");
-		Runnable refreshPill = () -> {
-			boolean isMarker = markerId.equals(markerSource.get());
-			markerPill.setText(isMarker ? "◎ markers" : "○ markers");
-			markerPill.setStyle(isMarker ? "-fx-border-color:" + color + "; -fx-text-fill:" + color
-				+ "; -fx-font-weight:bold;" : "");
-		};
-		markerPill.setOnAction(e -> markerSource.set(markerId));
-		markerSource.addListener((o, a, b) -> refreshPill.run());
-		refreshPill.run();
 
-		HBox bottom = new HBox(10, meter, markerPill);
-		bottom.setAlignment(Pos.CENTER_LEFT);
-		HBox.setHgrow(meter, Priority.ALWAYS);
+		detailLeft = new Label();
+		detailLeft.getStyleClass().add("src-detail");
+		detailRight = new Label();
+		detailRight.getStyleClass().add("src-detail");
+		Region sp = new Region();
+		HBox.setHgrow(sp, Priority.ALWAYS);
+		HBox detail = new HBox(detailLeft, sp, detailRight);
+		detail.setAlignment(Pos.CENTER_LEFT);
 
-		// dim the whole card when off
 		on.addListener((o, a, b) -> setOpacity(b ? 1.0 : 0.5));
 		setOpacity(on.get() ? 1.0 : 0.5);
 
-		getChildren().addAll(top, sel, bottom);
+		getChildren().addAll(top, sel, meter, detail);
 	}
 }

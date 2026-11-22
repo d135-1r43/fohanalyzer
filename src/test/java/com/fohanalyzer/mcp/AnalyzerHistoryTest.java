@@ -23,7 +23,7 @@ class AnalyzerHistoryTest
 	{
 		for (int i = 0; i < 25; i++)
 		{
-			history.recordStats(STATS, null, true, false);
+			history.recordStats(STATS, null, null, true, false);
 			clock.advance(Duration.ofMillis(120));
 		}
 
@@ -34,9 +34,9 @@ class AnalyzerHistoryTest
 	@Test
 	void dropsStatsOlderThanTheRetention()
 	{
-		history.recordStats(STATS, null, true, false);
+		history.recordStats(STATS, null, null, true, false);
 		clock.advance(AnalyzerHistory.STATS_RETENTION.plusSeconds(1));
-		history.recordStats(STATS, null, true, false);
+		history.recordStats(STATS, null, null, true, false);
 
 		assertEquals(1, history.stats(Duration.ofHours(1)).size());
 	}
@@ -44,9 +44,9 @@ class AnalyzerHistoryTest
 	@Test
 	void statsWindowOnlyReturnsRecentSamples()
 	{
-		history.recordStats(STATS, null, true, false);
+		history.recordStats(STATS, null, null, true, false);
 		clock.advance(Duration.ofMinutes(10));
-		history.recordStats(STATS, 96.5, true, true);
+		history.recordStats(STATS, 96.5, null, true, true);
 
 		List<AnalyzerHistory.StatsSample> recent = history.stats(Duration.ofMinutes(5));
 		assertEquals(1, recent.size());

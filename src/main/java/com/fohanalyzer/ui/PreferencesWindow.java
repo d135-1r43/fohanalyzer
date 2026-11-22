@@ -4,14 +4,20 @@ import com.fohanalyzer.mcp.McpHttpServer;
 import com.fohanalyzer.ui.controls.ChannelSelect;
 import com.fohanalyzer.ui.controls.Segmented;
 import com.fohanalyzer.ui.controls.Toggle;
+import com.fohanalyzer.ui.controls.Trim;
+import javafx.application.HostServices;
 import javafx.application.Platform;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
+import javafx.scene.control.Slider;
 import javafx.scene.control.TextField;
+import javafx.scene.control.Tooltip;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.layout.HBox;
@@ -24,29 +30,49 @@ import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 
 /**
- * The set-once settings: which device feeds each source, the SPL calibration,
- * and the MCP server an AI assistant can read the analyzer through.
+ * Every setting the app has: which device feeds each source and the solo trim,
+ * the SPL calibration and Leq window, how the plot is drawn and computed, the
+ * MCP server an AI assistant can read the analyzer through, and resetting it
+ * all.
  *
  * <p>
- * Both are decided when the rig is patched and then left alone, so they sit
- * here instead of taking up the rail that has to stay readable during a show.
- * Everything binds straight to {@link AppState}, which {@link Settings} already
- * persists — closing the window is not a commit step, and there is nothing to
- * cancel.
+ * The rail only shows and the strip above the plot only acts; anything that is
+ * a setting is here, one page per area. Everything binds straight to
+ * {@link AppState}, which {@link Settings} already persists — closing the
+ * window is not a commit step, and there is nothing to cancel.
  */
 public final class PreferencesWindow
 {
+	private static final Logger log = LoggerFactory.getLogger(PreferencesWindow.class);
+
 	/**
 	 * The window is not resizable: a dragged-in edge hides controls with no
 	 * clue that they are there. So this is the one width the layout is drawn
 	 * for, and the height is always whatever the content needs at that width.
 	 */
 	private static final double WIDTH = 420;
+	private static final double NAV_WIDTH = 140;
+
+	/** The range {@link Settings} accepts for the calibration offset. */
+	private static final double SPL_OFFSET_MIN = -200;
+	private static final double SPL_OFFSET_MAX = 200;
+
+	/** dB a click or scroll moves the spectrograph's colour range. */
+	private static final double SPECTRO_RANGE_STEP = 5;
+
+	private static final String[] PAGES = { "Sources", "SPL meter", "Display", "Analysis", "AI assistant",
+		"General" };
 
 	private static final int CLAUDE_CODE = 0;
 	private static final int CLAUDE_DESKTOP = 1;
@@ -54,13 +80,19 @@ public final class PreferencesWindow
 
 	private final AppState state;
 	private final Settings settings;
+	private final HostServices host;
 	private Stage stage;
 	private VBox body;
+	/**
+	 * The page shown, kept while the app runs so reopening lands on it again.
+	 */
+	private int page;
 
-	public PreferencesWindow(AppState state, Settings settings)
+	public PreferencesWindow(AppState state, Settings settings, HostServices host)
 	{
 		this.state = state;
 		this.settings = settings;
+		this.host = host;
 	}
 
 	/** Opens the window, or brings it forward if it is already up. */
@@ -102,8 +134,9 @@ public final class PreferencesWindow
 		stage.show();
 
 		// The channel stepper and the mono/stereo row only exist for a
-		// multi-channel live input, so the content gets taller once a source is
-		// picked. Nothing can be dragged bigger any more, so the window has to
+		// multi-channel live input, and each page has its own height, so the
+		// content changes height when a source is picked or a page is chosen.
+		// Nothing can be dragged bigger any more, so the window has to
 		// follow it. Deferred, to keep the resize out of the layout pass that
 		// asked for it.
 		body.heightProperty().addListener((o, a, b) -> Platform.runLater(() -> {
@@ -140,8 +173,46 @@ public final class PreferencesWindow
 	 */
 	VBox buildRoot()
 	{
-		body = new VBox(18, sourcesSection(), splSection(), mcpSection());
+		VBox[] pages = { sourcesSection(), splSection(), displaySection(), analysisSection(), mcpSection(),
+			generalSection() };
+		body = new VBox();
 		body.getStyleClass().add("prefs-body");
+		// Width is the fixed one: a wrapped hint only has a height once it
+		// knows what to wrap into, so pinning the width is what makes the
+		// height measurable at all.
+		body.setMinWidth(WIDTH);
+		body.setPrefWidth(WIDTH);
+		body.setMaxWidth(WIDTH);
+
+		VBox nav = new VBox(2);
+		nav.getStyleClass().add("prefs-nav");
+		nav.setMinWidth(NAV_WIDTH);
+		nav.setPrefWidth(NAV_WIDTH);
+		Button[] navButtons = new Button[PAGES.length];
+		Runnable showPage = () -> {
+			body.getChildren().setAll(pages[page]);
+			for (int i = 0; i < navButtons.length; i++)
+			{
+				navButtons[i].getStyleClass().remove("on");
+				if (i == page) navButtons[i].getStyleClass().add("on");
+			}
+		};
+		for (int i = 0; i < PAGES.length; i++)
+		{
+			int index = i;
+			Button b = new Button(PAGES[i]);
+			b.getStyleClass().add("prefs-nav-btn");
+			b.setMaxWidth(Double.MAX_VALUE);
+			b.setOnAction(e -> {
+				page = index;
+				showPage.run();
+			});
+			navButtons[i] = b;
+			nav.getChildren().add(b);
+		}
+		showPage.run();
+
+		HBox main = new HBox(nav, body);
 
 		Button close = new Button("Done");
 		close.getStyleClass().addAll("btn", "mini-btn");
@@ -152,14 +223,8 @@ public final class PreferencesWindow
 		foot.setAlignment(Pos.CENTER_RIGHT);
 		foot.getStyleClass().add("prefs-foot");
 
-		VBox root = new VBox(body, foot);
+		VBox root = new VBox(main, foot);
 		root.getStyleClass().add("prefs-root");
-		// Width is the fixed one of the two: a wrapped hint only has a height
-		// once it knows what to wrap into, so pinning the width is what makes
-		// the height measurable at all.
-		root.setMinWidth(WIDTH);
-		root.setPrefWidth(WIDTH);
-		root.setMaxWidth(WIDTH);
 		return root;
 	}
 
@@ -174,7 +239,29 @@ public final class PreferencesWindow
 			hint("Live inputs are listed first, simulated presets below. A"
 				+ " multi-channel interface adds a channel stepper. Set the solo"
 				+ " bus to Stereo to read the selected channel and the one above"
-				+ " it as a pair, merged to one trace."));
+				+ " it as a pair, merged to one trace."),
+			soloTrimRow(),
+			hint("The mic and the solo bus arrive at whatever level the console gives them."
+				+ " The trim shifts the solo trace onto the mic's, so the two can be compared"
+				+ " by eye and the transfer curve's 0 dB line means something. Match lines up"
+				+ " the averages."));
+	}
+
+	private HBox soloTrimRow()
+	{
+		Label lbl = new Label("Solo trim");
+		lbl.getStyleClass().add("ctl-lbl");
+		Region sp = new Region();
+		HBox.setHgrow(sp, Priority.ALWAYS);
+		Trim trim = new Trim(state.soloTrim, -AppState.SOLO_TRIM_MAX, AppState.SOLO_TRIM_MAX, true);
+		Button match = miniBtn("Match", e -> {
+			double t = Math.round(state.stats.get().matchingSoloTrim() * 10) / 10.0;
+			state.soloTrim.set(Math.clamp(t, -AppState.SOLO_TRIM_MAX, AppState.SOLO_TRIM_MAX));
+		});
+		match.setTooltip(new Tooltip("Set the trim from the average Mic−Solo difference"));
+		HBox row = new HBox(6, lbl, sp, trim, match);
+		row.setAlignment(Pos.CENTER_LEFT);
+		return row;
 	}
 
 	private VBox sourceRow(String name, String color, java.util.List<InputPreset> options,
@@ -250,7 +337,35 @@ public final class PreferencesWindow
 		HBox showRow = new HBox(showLbl, sp, new Toggle(state.showSpl, "#a3e635"));
 		showRow.setAlignment(Pos.CENTER_LEFT);
 
-		VBox sec = section("SPL meter", showRow, needsLive, calRow, howTo, status);
+		// For when the reading drifts from a hand-held meter. It moves the
+		// calibration offset itself, so there is one number, not two that
+		// stack; an uncalibrated meter has nothing to nudge.
+		Label nudgeLbl = new Label("Match a reference meter");
+		nudgeLbl.getStyleClass().add("ctl-lbl");
+		Region nudgeSp = new Region();
+		HBox.setHgrow(nudgeSp, Priority.ALWAYS);
+		HBox nudgeRow = new HBox(nudgeLbl, nudgeSp, new Trim(state.splOffset, SPL_OFFSET_MIN, SPL_OFFSET_MAX, false));
+		nudgeRow.setAlignment(Pos.CENTER_LEFT);
+		nudgeRow.disableProperty().bind(state.splOffset.isEqualTo(0));
+
+		Label winLbl = new Label("Leq window");
+		winLbl.getStyleClass().add("ctl-lbl");
+		Map<Integer, String> winOpts = new LinkedHashMap<>();
+		for (int w : AppState.LEQ_WINDOWS)
+			winOpts.put(w, w < 60 ? w + " s" : w / 60 + " m");
+		Segmented window = new Segmented(state.leqWindow, winOpts);
+
+		Label logsLbl = new Label("Session logs");
+		logsLbl.getStyleClass().add("ctl-lbl");
+		Region logsSp = new Region();
+		HBox.setHgrow(logsSp, Priority.ALWAYS);
+		HBox logsRow = new HBox(logsLbl, logsSp, miniBtn("Show in Finder", e -> showSplLogs()));
+		logsRow.setAlignment(Pos.CENTER_LEFT);
+		Label logsHint = hint("While the meter is calibrated, every second is written to a CSV in "
+			+ SplLog.defaultDir() + ", one file per session.");
+
+		VBox sec = section("SPL meter", showRow, needsLive, calRow, howTo, status, nudgeRow, winLbl, window,
+			logsRow, logsHint);
 
 		// Only a live mic produces the RMS the calibration is computed from.
 		// Just the controls are disabled: the notice and the status stay
@@ -265,6 +380,162 @@ public final class PreferencesWindow
 		state.micChan.addListener((o, a, b) -> vis.run());
 		vis.run();
 		return sec;
+	}
+
+	private void showSplLogs()
+	{
+		String file = state.splLogFile.get();
+		Path dir = file != null ? Path.of(file).getParent() : SplLog.defaultDir();
+		try
+		{
+			// The folder only appears with the first logged second.
+			Files.createDirectories(dir);
+		}
+		catch (IOException e)
+		{
+			log.warn("could not create the SPL log folder {}", dir, e);
+		}
+		host.showDocument(dir.toUri().toString());
+	}
+
+	// ---- Display ----------------------------------------------------------
+	private VBox displaySection()
+	{
+		// The marker source is a string in the state; bridge it to the
+		// segmented control's integer.
+		IntegerProperty markerIdx = new SimpleIntegerProperty(markerIndex());
+		markerIdx.addListener((o, a, b) -> state.markerSource.set(b.intValue() == 1 ? "solo" : "mic"));
+		state.markerSource.addListener((o, a, b) -> markerIdx.set(markerIndex()));
+		Map<Integer, String> markerOpts = new LinkedHashMap<>();
+		markerOpts.put(0, "Mic");
+		markerOpts.put(1, "Solo");
+
+		Map<Integer, String> srcOpts = new LinkedHashMap<>();
+		srcOpts.put(AppState.SPECTRO_MIC, "Mic");
+		srcOpts.put(AppState.SPECTRO_SOLO, "Solo");
+		srcOpts.put(AppState.SPECTRO_DIFF, "Mic−Solo");
+
+		Map<Integer, String> histOpts = new LinkedHashMap<>();
+		histOpts.put(10, "10 s");
+		histOpts.put(30, "30 s");
+		histOpts.put(60, "60 s");
+
+		AppState defaults = new AppState();
+		Trim floor = new Trim(state.spectroFloor, AppState.SPECTRO_FLOOR_MIN, AppState.SPECTRO_FLOOR_MAX,
+			SPECTRO_RANGE_STEP, defaults.spectroFloor.get(), true);
+		Trim ceiling = new Trim(state.spectroCeiling, AppState.SPECTRO_CEILING_MIN,
+			AppState.SPECTRO_CEILING_MAX, SPECTRO_RANGE_STEP, defaults.spectroCeiling.get(), true);
+		Region sp = new Region();
+		HBox.setHgrow(sp, Priority.ALWAYS);
+		HBox rangeRow = new HBox(floor, sp, ceiling);
+		rangeRow.setAlignment(Pos.CENTER_LEFT);
+
+		Region key = new Region();
+		key.getStyleClass().add("spectro-key");
+		key.setStyle("-fx-background-color: " + colourKeyGradient() + ";");
+		Label diffHint = hint("Mic−Solo spans ±" + Math.round(Spectrograph.DIFF_RANGE)
+			+ " dB, dark where the mic is quieter; the colour range does not apply to it.");
+
+		// The level range means nothing for a difference, which has its own.
+		Runnable vis = () -> {
+			boolean diff = state.spectroSource.get() == AppState.SPECTRO_DIFF;
+			rangeRow.setDisable(diff);
+			diffHint.setVisible(diff);
+			diffHint.setManaged(diff);
+		};
+		state.spectroSource.addListener((o, a, b) -> vis.run());
+		vis.run();
+
+		return section("Display",
+			label("Peak markers follow"), new Segmented(markerIdx, markerOpts),
+			label("Spectrograph source"), new Segmented(state.spectroSource, srcOpts),
+			label("Spectrograph history"), new Segmented(state.spectroHistory, histOpts),
+			label("Spectrograph colour range"), rangeRow, key, diffHint);
+	}
+
+	private int markerIndex()
+	{
+		return "solo".equals(state.markerSource.get()) ? 1 : 0;
+	}
+
+	/** The spectrograph's colour map as a CSS gradient, for its key. */
+	private static String colourKeyGradient()
+	{
+		StringBuilder css = new StringBuilder("linear-gradient(to right");
+		int steps = 12;
+		for (int i = 0; i <= steps; i++)
+		{
+			Color c = Spectrograph.color(i / (double)steps);
+			css.append(String.format(Locale.US, ", rgb(%d,%d,%d) %d%%",
+				Math.round(c.getRed() * 255), Math.round(c.getGreen() * 255), Math.round(c.getBlue() * 255),
+				Math.round(100.0 * i / steps)));
+		}
+		return css.append(")").toString();
+	}
+
+	// ---- Analysis ---------------------------------------------------------
+	private VBox analysisSection()
+	{
+		Map<Integer, String> fracOpts = new LinkedHashMap<>();
+		fracOpts.put(1, "1/1");
+		fracOpts.put(3, "1/3");
+		fracOpts.put(6, "1/6");
+		fracOpts.put(12, "1/12");
+		fracOpts.put(24, "1/24");
+
+		Label smoothLbl = label("Smoothing");
+		Label smoothVal = new Label();
+		smoothVal.getStyleClass().add("row-val");
+		Region sp = new Region();
+		HBox.setHgrow(sp, Priority.ALWAYS);
+		HBox smoothRow = new HBox(smoothLbl, sp, smoothVal);
+		Slider slider = new Slider(0, 0.95, state.smoothing.get());
+		slider.valueProperty().bindBidirectional(state.smoothing);
+		Runnable updateVal = () -> smoothVal.setText(Math.round(state.smoothing.get() * 100) + "%");
+		state.smoothing.addListener((o, a, b) -> updateVal.run());
+		updateVal.run();
+
+		Map<Integer, String> avgOpts = new LinkedHashMap<>();
+		avgOpts.put(1, "Off");
+		avgOpts.put(2, "2");
+		avgOpts.put(4, "4");
+		avgOpts.put(8, "8");
+		avgOpts.put(16, "16");
+
+		return section("Analysis",
+			label("Resolution"), new Segmented(state.frac, fracOpts),
+			smoothRow, slider,
+			label("Averaging"), new Segmented(state.avgN, avgOpts),
+			hint("How the plot is computed. The rail shows what is in effect."));
+	}
+
+	// ---- General ----------------------------------------------------------
+	private VBox generalSection()
+	{
+		Button reset = miniBtn("Reset saved settings…", e -> confirmReset());
+		reset.getStyleClass().add("danger-btn");
+		return section("General", reset,
+			hint("Clears the SPL calibration, the solo trim, the selected inputs and the display and"
+				+ " analysis options."));
+	}
+
+	/**
+	 * Confirm before discarding stored settings — SPL calibration is the
+	 * expensive one, and an accidental click would mean re-measuring against a
+	 * reference source.
+	 */
+	private void confirmReset()
+	{
+		Alert alert = new Alert(Alert.AlertType.CONFIRMATION,
+			"Discard saved settings and return to defaults?\n\n"
+				+ "This clears the SPL calibration, the solo trim, the selected inputs and the display and"
+				+ " analysis options.",
+			ButtonType.CANCEL, ButtonType.OK);
+		alert.setHeaderText("Reset saved settings");
+		alert.initOwner(stage);
+		alert.showAndWait()
+			.filter(b -> b == ButtonType.OK)
+			.ifPresent(b -> settings.reset(state));
 	}
 
 	// ---- MCP server -------------------------------------------------------
@@ -420,6 +691,21 @@ public final class PreferencesWindow
 		sec.getChildren().addAll(children);
 		sec.getStyleClass().add("section");
 		return sec;
+	}
+
+	private static Label label(String text)
+	{
+		Label l = new Label(text);
+		l.getStyleClass().add("row-lbl");
+		return l;
+	}
+
+	private static Button miniBtn(String text, javafx.event.EventHandler<javafx.event.ActionEvent> action)
+	{
+		Button b = new Button(text);
+		b.getStyleClass().add("mini-btn");
+		b.setOnAction(action);
+		return b;
 	}
 
 	private static Label hint(String text)

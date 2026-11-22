@@ -31,7 +31,10 @@
 - **Ring-out assist.** With a live mic, *Detect ring* reports the actual ringing
   fundamental — not the band centre a peak marker rounds to — and suggests a cut.
 - **SPL metering.** Calibrate against a known reference level and the readout is real dB
-  SPL rather than dBFS.
+  SPL rather than dBFS. The meter shows the Leq over a window you choose (10 s to 60 min),
+  the Fast level, and the maximum and peak since a reset, and logs every second of the
+  session to a CSV under `~/Documents/FOHanalyzer/SPL logs`. Nothing is weighted yet, so the
+  figures are labelled Z (`LZeq`, `LZF`, `LZpeak`).
 - **Peak hold, peak markers, transfer function.** Overlays for the mic−solo difference and
   for what the plot did while you were not looking.
 - **Reference capture.** A dashed ghost of both traces, to A/B before against after EQ.
@@ -163,20 +166,24 @@ Only the `core` module is used. The `jvm` module's `AudioDispatcher` is delibera
 used for capture: it consumes a mono stream, which would give up the per-channel selection
 this app needs on multi-channel interfaces (Scarlett 18i20, Behringer Wing, …).
 
-### Rail vs preferences
+### See, set, do
 
-The rail is ordered by how often a hand reaches for something mid-show: the source traces
-and what they read, then ring-out assist, the view (RTA, spectrograph or both), the
-overlays, and the analysis settings
-(resolution, smoothing, averaging) last. Everything decided once when the rig is patched —
-which device feeds each source, and the SPL calibration — lives in a separate *Preferences*
-window instead, so it is not competing for the column you have to read during a show.
+Every readout and control has one home, chosen by what you do with it:
 
-The source cards still carry a read-only line naming the current selection, because "is
-this trace live or simulated, and on which channel" is a question you ask at a glance while
-working, even though the answer is only *set* once. Nothing in that window is a commit
-step: the controls bind straight to the shared state that is persisted anyway, so there is
-no OK/Cancel and nothing to apply.
+- **See: the rail.** Each live readout once — the mic and solo levels and what feeds them,
+  the loudest band, the SPL meter, the logged rings, and what the plot is computed with.
+  Nothing in it is a control; a setting the rail depends on is shown as text (`trim
+  −44.0 dB`, `LZeq · 5 min`). Clicking a logged ring locates it on the plot.
+- **Set: Preferences (⌘,).** Every setting, one page per area: sources and solo trim, SPL
+  calibration, Leq window and logs, display (marker source, spectrograph), analysis
+  (resolution, smoothing, averaging), the MCP server, and resetting saved settings.
+- **Do: the strip above the plot.** What gets pressed during a show: RTA / Split /
+  Spectro, which traces and overlays are drawn, *Capture reference*, *Detect ring*, and a
+  *Reset* menu (peak hold, SPL, ring log, reference).
+
+The header shows only the wordmark and the status (LIVE, sample rate, clock). Nothing in
+Preferences is a commit step: the controls bind straight to the shared state that is
+persisted anyway, so there is no OK/Cancel and nothing to apply.
 
 <p align="center">
   <img src="docs/preferences.png" alt="The preferences window: source pickers and SPL calibration" width="380">
@@ -197,12 +204,13 @@ A saved `live:<device>` input is only restored if that interface is actually pre
 moving between rigs is the normal case, so a missing device quietly leaves the simulated
 preset selected instead of pointing at a line that cannot be opened. A channel index saved
 against an 18-in interface is clamped when it reopens on a 2-in one. *Reset saved settings*
-at the foot of the rail clears everything back to defaults.
+in *Preferences → General* clears everything back to defaults.
 
 The preferences window is not resizable: dragging an edge in used to hide controls with
 nothing to say they were there. Its width is fixed and its height is measured from the
-content, re-measured whenever that content changes — picking a multi-channel live input
-adds a channel stepper and a mono/stereo row, and the window grows to match.
+content, re-measured whenever that content changes — choosing another page, or picking a
+multi-channel live input that adds a channel stepper and a mono/stereo row, and the window
+follows.
 
 It remembers its position, restored onto the stage rather than the scene — what was saved
 is the outer window and includes the title bar, so feeding it back into the scene would add
@@ -211,12 +219,12 @@ which is the normal case for a laptop carried between rigs.
 
 ### Ring-out assist
 
-With a **live** measurement mic, *Detect ring from mic* runs TarsosDSP's `FastYin` over
+With a **live** measurement mic, *Detect ring* in the strip above the plot runs TarsosDSP's `FastYin` over
 the newest audio and logs the actual ringing fundamental, rather than the band centre the
 peak markers round to. Four consecutive 2048-sample blocks are estimated independently and
 the median is logged, so one glitched block cannot shift the frequency you go on to notch.
 The suggested cut comes from how far the loudest band stands above the mic average. The
-section is hidden while the mic is a simulated preset.
+button is hidden while the mic is a simulated preset; the rail lists the logged rings.
 
 ### MCP server
 
@@ -309,6 +317,11 @@ short class name, and message.
 - Broadband RMS stays hand-rolled: TarsosDSP's `SilenceDetector.soundPressureLevel` divides
   energy by the buffer length instead of its square root, so it would not agree with the RMS
   the SPL readout is calibrated against.
+- The SPL meter (`dsp.LeqMeter`) is fed every captured sample on the audio thread, not the
+  readout's 16384-sample RMS: an Leq is the energy of everything in the window, and a
+  reading taken a few times a second would miss what falls between. Energy is kept in
+  100 ms buckets for an hour, so switching the window recomputes rather than restarts. The
+  Fast level is the IEC 61672 125 ms exponential average of the squared signal.
 - The UI components (Toggle/Segmented/Meter) have no unit tests — those controls are trivial
   and JavaFX UI testing would add disproportionate setup. Core logic is fully tested.
 

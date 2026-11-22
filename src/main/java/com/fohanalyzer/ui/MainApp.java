@@ -4,10 +4,9 @@ import com.fohanalyzer.Version;
 import com.fohanalyzer.audio.AudioDevice;
 import com.fohanalyzer.audio.AudioInputs;
 import com.fohanalyzer.audio.AudioSource;
-import com.fohanalyzer.dsp.Stats;
+import com.fohanalyzer.dsp.LeqMeter;
 import com.fohanalyzer.mcp.McpHttpServer;
 import com.fohanalyzer.ui.controls.Logo;
-import com.fohanalyzer.ui.controls.Trim;
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -28,6 +27,7 @@ import javafx.util.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.file.Path;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
@@ -45,6 +45,7 @@ public class MainApp extends Application
 	private final AppState state = new AppState();
 	private final Settings settings = new Settings();
 	private final McpHttpServer mcpServer = new McpHttpServer(state.history);
+	private final SplLog splLog = new SplLog();
 	/**
 	 * Starts and stops run here, one at a time and in order: binding a port can
 	 * block, and a toggle flicked twice must not race its own restart.
@@ -68,13 +69,7 @@ public class MainApp extends Application
 		return t;
 	});
 
-	private Label peakVal;
-	private Label micVal;
-	private Label soloVal;
-	private Label splVal;
 	private Label clockLabel;
-
-	private HBox splChip;
 
 	@Override
 	public void start(Stage stage)
@@ -83,13 +78,16 @@ public class MainApp extends Application
 		Fonts.install();
 		AnalyzerView analyzer = new AnalyzerView(state);
 		// same 18px gutter as the header/rail
-		BorderPane.setMargin(analyzer, new Insets(14, 18, 14, 18));
+		// The strip of actions sits on top of the plot it acts on.
+		VBox center = new VBox(10, new ActionStrip(state), analyzer);
+		VBox.setVgrow(analyzer, Priority.ALWAYS);
+		BorderPane.setMargin(center, new Insets(12, 18, 14, 18));
 
 		BorderPane root = new BorderPane();
 		root.getStyleClass().add("root");
 		root.setTop(buildHeader());
-		root.setCenter(analyzer);
-		ControlRail rail = new ControlRail(state, settings);
+		root.setCenter(center);
+		ControlRail rail = new ControlRail(state, settings, getHostServices());
 		root.setRight(rail);
 
 		Scene scene = new Scene(root, 1366, 820, Color.web("#070a0f"));
@@ -111,9 +109,6 @@ public class MainApp extends Application
 		stage.requestFocus();
 		stage.setAlwaysOnTop(false);
 
-		state.stats.addListener((o, a, st) -> updateReadouts(st));
-		updateReadouts(state.stats.get());
-
 		wireLiveAudio();
 		startClock();
 		refreshDevices();
@@ -124,6 +119,7 @@ public class MainApp extends Application
 
 		stage.setOnCloseRequest(e -> {
 			settings.flush();
+			splLog.close();
 			mcpServer.stop();
 			if (state.micSource != null) state.micSource.disconnect();
 			if (state.soloSource != null) state.soloSource.disconnect();
@@ -216,29 +212,10 @@ public class MainApp extends Application
 		// draws against the top edge instead of beside the wordmark.
 		brand.setFillHeight(false);
 
-		peakVal = new Label("—");
-		micVal = new Label("-90");
-		soloVal = new Label("-90");
-		splVal = new Label("—");
-		// A trimmed solo trace is labelled with its trim, so nobody reads the
-		// offset level as the bus's own.
-		Label soloLbl = new Label();
-		Runnable soloTrimLbl = () -> {
-			double t = state.soloTrim.get();
-			soloLbl.setText(t != 0 ? "SOLO " + Trim.fmtDb(t) : "SOLO");
-		};
-		state.soloTrim.addListener((o, a, b) -> soloTrimLbl.run());
-		soloTrimLbl.run();
-		HBox readouts = new HBox(10,
-			readoutChip("PEAK", peakVal, "#e9fb9b"),
-			readoutChip("MIC", micVal, "#22d3ee"),
-			readoutChip(soloLbl, soloVal, "#f5a524"));
-		Label splLbl = new Label("SPL");
-		splChip = readoutChip(splLbl, splVal, "#a3e635");
-		readouts.getChildren().add(splChip);
-		readouts.setAlignment(Pos.CENTER_LEFT);
-		HBox.setHgrow(readouts, Priority.ALWAYS);
-		readouts.setAlignment(Pos.CENTER_RIGHT);
+		// The header says what this is and what state it is in. Readouts live
+		// in the rail, once each, rather than repeated up here.
+		Region spacer = new Region();
+		HBox.setHgrow(spacer, Priority.ALWAYS);
 
 		Circle led = new Circle(4.5, Color.web("#ff4d4d"));
 		Label liveTxt = new Label("LIVE");
@@ -250,20 +227,7 @@ public class MainApp extends Application
 		HBox status = new HBox(10, led, liveTxt, sep(), rate, sep(), clockLabel);
 		status.setAlignment(Pos.CENTER_LEFT);
 
-		// SPL chip needs a live mic and the user's say-so. Shown uncalibrated,
-		// it is labelled for what it reads rather than passed off as SPL.
-		Runnable splVis = () -> {
-			boolean show = state.isMicLive() && state.showSpl.get();
-			splChip.setVisible(show);
-			splChip.setManaged(show);
-			splLbl.setText(state.splOffset.get() != 0 ? "SPL" : "dBFS");
-		};
-		state.micChan.addListener((o, a, b) -> splVis.run());
-		state.showSpl.addListener((o, a, b) -> splVis.run());
-		state.splOffset.addListener((o, a, b) -> splVis.run());
-		splVis.run();
-
-		HBox header = new HBox(24, brand, readouts, status);
+		HBox header = new HBox(24, brand, spacer, status);
 		header.getStyleClass().add("header");
 		header.setAlignment(Pos.CENTER_LEFT);
 		// Each group keeps its natural height so the row's center-left
@@ -271,23 +235,6 @@ public class MainApp extends Application
 		// their content to the top.
 		header.setFillHeight(false);
 		return header;
-	}
-
-	private HBox readoutChip(String label, Label valueLabel, String color)
-	{
-		return readoutChip(new Label(label), valueLabel, color);
-	}
-
-	private HBox readoutChip(Label l, Label valueLabel, String color)
-	{
-		l.getStyleClass().add("ro-lbl");
-		valueLabel.getStyleClass().add("ro-val");
-		valueLabel.setStyle("-fx-text-fill:" + color + ";");
-		VBox box = new VBox(3, l, valueLabel);
-		HBox chip = new HBox(box);
-		chip.getStyleClass().add("readout");
-		chip.setMinWidth(96);
-		return chip;
 	}
 
 	private Region sep()
@@ -298,15 +245,6 @@ public class MainApp extends Application
 		r.setPrefSize(1, 16);
 		r.setMaxHeight(16);
 		return r;
-	}
-
-	private void updateReadouts(Stats st)
-	{
-		peakVal.setText(com.fohanalyzer.engine.Engine.fmtFreq(st.peakFreq()));
-		micVal.setText(String.format(java.util.Locale.US, "%.1f", st.micPeak()));
-		soloVal.setText(String.format(java.util.Locale.US, "%.1f", st.soloPeak()));
-		Double spl = st.micRmsDbfs() != null ? st.micRmsDbfs() + state.splOffset.get() : null;
-		splVal.setText(spl != null ? String.format(java.util.Locale.US, "%.1f", spl) : "—");
 	}
 
 	// ---- live audio wiring (ports the two $effect blocks) -----------------
@@ -340,9 +278,16 @@ public class MainApp extends Application
 			if (src == null)
 			{
 				src = new AudioSource();
-				if (isMic) state.micSource = src;
+				if (isMic)
+				{
+					// The SPL meter integrates every sample the mic captures.
+					src.setLevelMeter(state.leq);
+					state.micSource = src;
+				}
 				else
+				{
 					state.soloSource = src;
+				}
 			}
 			AudioSource source = src;
 			// Open the line off the FX thread; report the channel count back.
@@ -424,10 +369,28 @@ public class MainApp extends Application
 		state.audioDevices.setAll(AudioInputs.enumerate());
 	}
 
+	/**
+	 * One row a second into the session's SPL log, while the meter is showing a
+	 * calibrated live mic. The interval is drained either way, so a row never
+	 * covers a stretch when the meter was off.
+	 */
+	private void logSpl()
+	{
+		LeqMeter.Interval interval = state.leq.drainInterval();
+		double off = state.splOffset.get();
+		boolean logging = state.isMicLive() && state.showSpl.get() && off != 0;
+		if (interval == null || !logging) return;
+
+		Path file = splLog.append(interval, state.leq.reading(state.leqWindow.get()), off);
+		state.splLogFile.set(file.toString());
+	}
+
 	private void startClock()
 	{
-		Timeline tl = new Timeline(new KeyFrame(Duration.seconds(1),
-			e -> clockLabel.setText(LocalTime.now().format(CLOCK))));
+		Timeline tl = new Timeline(new KeyFrame(Duration.seconds(1), e -> {
+			clockLabel.setText(LocalTime.now().format(CLOCK));
+			logSpl();
+		}));
 		tl.setCycleCount(Animation.INDEFINITE);
 		tl.play();
 		clockLabel.setText(LocalTime.now().format(CLOCK));

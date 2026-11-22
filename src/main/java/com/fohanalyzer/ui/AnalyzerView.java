@@ -1,10 +1,12 @@
 package com.fohanalyzer.ui;
 
 import com.fohanalyzer.audio.AudioSource;
+import com.fohanalyzer.dsp.LeqMeter;
 import com.fohanalyzer.dsp.SignalState;
 import com.fohanalyzer.dsp.Stats;
 import com.fohanalyzer.engine.Engine;
 import com.fohanalyzer.engine.Voice;
+import com.fohanalyzer.mcp.AnalyzerHistory;
 import javafx.animation.AnimationTimer;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
@@ -147,7 +149,7 @@ public final class AnalyzerView extends Region
 			Double spl = s.micRmsDbfs() != null && state.splOffset.get() != 0
 				? s.micRmsDbfs() + state.splOffset.get()
 				: null;
-			state.history.recordStats(s, spl, micLive, soloLive);
+			state.history.recordStats(s, spl, spl != null ? leq() : null, micLive, soloLive);
 			state.history.recordBands(frac, centers, sig.dispMic, sig.dispSolo, micLive, soloLive);
 		}
 
@@ -195,6 +197,16 @@ public final class AnalyzerView extends Region
 				sig.dispMic, sig.trimSolo, state.soloTrim.get(), width, plotW, rtaH, micOn, soloOn);
 		}
 		Draw.drawZoneStrip(g, plotW, plotH, width, height);
+	}
+
+	/** The SPL meter's Leq in dB SPL, for the MCP history; null before any. */
+	private AnalyzerHistory.Leq leq()
+	{
+		int window = state.leqWindow.get();
+		LeqMeter.Reading r = state.leq.reading(window);
+		if (!Double.isFinite(r.leqDb())) return null;
+
+		return new AnalyzerHistory.Leq(r.leqDb() + state.splOffset.get(), window, r.integratedSeconds());
 	}
 
 	private void drawRta(GraphicsContext g, double[] centers, double width, double plotW, double rtaH,

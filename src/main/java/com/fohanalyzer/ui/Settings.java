@@ -29,6 +29,7 @@ public final class Settings
 	private static final String SPL_OFFSET = "splOffset";
 	private static final String CAL_REF_SPL = "calRefSpl";
 	private static final String SHOW_SPL = "showSpl";
+	private static final String LEQ_WINDOW = "leqWindow";
 	private static final String MIC_CHAN = "micChan";
 	private static final String SOLO_CHAN = "soloChan";
 	private static final String MIC_CHAN_IDX = "micChanIdx";
@@ -134,6 +135,7 @@ public final class Settings
 		state.splOffset.set(d.splOffset.get());
 		state.calRefSpl.set(d.calRefSpl.get());
 		state.showSpl.set(d.showSpl.get());
+		state.leqWindow.set(d.leqWindow.get());
 		state.frac.set(d.frac.get());
 		state.smoothing.set(d.smoothing.get());
 		state.avgN.set(d.avgN.get());
@@ -244,6 +246,8 @@ public final class Settings
 		if (VIEWS.contains(view)) st.view.set(view);
 		int spectroSource = prefs.getInt(SPECTRO_SOURCE, st.spectroSource.get());
 		if (SPECTRO_SOURCES.contains(spectroSource)) st.spectroSource.set(spectroSource);
+		int leqWindow = prefs.getInt(LEQ_WINDOW, st.leqWindow.get());
+		if (AppState.LEQ_WINDOWS.contains(leqWindow)) st.leqWindow.set(leqWindow);
 		int history = prefs.getInt(SPECTRO_HISTORY, st.spectroHistory.get());
 		if (SPECTRO_HISTORIES.contains(history)) st.spectroHistory.set(history);
 		st.spectroFloor.set(clamp(prefs.getDouble(SPECTRO_FLOOR, st.spectroFloor.get()),
@@ -343,6 +347,7 @@ public final class Settings
 		st.spectroFloor.addListener((o, a, v) -> prefs.putDouble(SPECTRO_FLOOR, v.doubleValue()));
 		st.spectroCeiling.addListener((o, a, v) -> prefs.putDouble(SPECTRO_CEILING, v.doubleValue()));
 		st.showSpl.addListener((o, a, v) -> prefs.putBoolean(SHOW_SPL, v));
+		st.leqWindow.addListener((o, a, v) -> prefs.putInt(LEQ_WINDOW, v.intValue()));
 		st.mcpEnabled.addListener((o, a, v) -> prefs.putBoolean(MCP_ENABLED, v));
 		st.mcpPort.addListener((o, a, v) -> prefs.putInt(MCP_PORT, v.intValue()));
 	}

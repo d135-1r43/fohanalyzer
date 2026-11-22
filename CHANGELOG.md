@@ -12,6 +12,21 @@ carries the `.dmg`. Dependency bumps are summarised rather than listed one by on
   spectrograph under the RTA, and the spectrograph alone. It shows the mic, the solo bus or
   Mic−Solo, over 10, 30 or 60 seconds, with an adjustable colour range. A located ring is
   marked down through it too.
+- The SPL meter keeps a record instead of one passing number. It shows the Leq over a
+  window of 10 s, 1, 5, 15 or 60 minutes, the Fast level, and the maximum and peak since a
+  reset. While the meter is calibrated, every second
+  is logged to a CSV in `~/Documents/FOHanalyzer/SPL logs`, one file per session. Levels
+  are unweighted for now and labelled Z (`LZeq · 5 min`). The MCP `get_stats_history` tool
+  reports the Leq with its window and weighting.
+
+### Changed
+
+- The window is split by what you do: the **rail only shows** (levels, loudest band, SPL
+  meter, logged rings, and what the plot is computed with), **Preferences holds every
+  setting** (now with Display, Analysis and General pages, plus the solo trim, the SPL nudge
+  and the Leq window), and a **strip above the plot** has what you press during a show —
+  the view, traces and overlays, *Capture reference*, *Detect ring* and a *Reset* menu.
+- The header no longer repeats the readouts; it shows the wordmark and the live status.
 
 ### Removed
 

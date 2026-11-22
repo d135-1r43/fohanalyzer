@@ -44,10 +44,19 @@ public final class AnalyzerHistory
 
 	/**
 	 * One readout sample. Levels are the plotted band levels in dB;
-	 * {@code splDb} is only set when the mic is live and calibrated.
+	 * {@code splDb} and {@code leq} are only set when the mic is live and
+	 * calibrated.
 	 */
 	public record StatsSample(Instant at, double peakFreq, double micPeak, double micAvg, double soloAvg,
-		double soloPeak, Double micRmsDbfs, Double splDb, boolean micLive, boolean soloLive)
+		double soloPeak, Double micRmsDbfs, Double splDb, Leq leq, boolean micLive, boolean soloLive)
+	{
+	}
+
+	/**
+	 * The SPL meter's equivalent continuous level in dB SPL, over the window it
+	 * was set to at the time, and how much of that window it had filled.
+	 */
+	public record Leq(double db, int windowSeconds, double integratedSeconds)
 	{
 	}
 
@@ -87,14 +96,14 @@ public final class AnalyzerHistory
 	 * frame loop reports several times a second; a second is plenty for a model
 	 * looking at minutes, and keeps half an hour to a few thousand entries.
 	 */
-	public synchronized void recordStats(Stats s, Double splDb, boolean micLive, boolean soloLive)
+	public synchronized void recordStats(Stats s, Double splDb, Leq leq, boolean micLive, boolean soloLive)
 	{
 		Instant now = clock.instant();
 		StatsSample last = stats.peekLast();
 		if (last != null && Duration.between(last.at(), now).compareTo(STATS_INTERVAL) < 0) return;
 
 		stats.addLast(new StatsSample(now, s.peakFreq(), s.micPeak(), s.micAvg(), s.soloAvg(), s.soloPeak(),
-			s.micRmsDbfs(), splDb, micLive, soloLive));
+			s.micRmsDbfs(), splDb, leq, micLive, soloLive));
 		Instant cutoff = now.minus(STATS_RETENTION);
 		while (!stats.isEmpty() && stats.peekFirst().at().isBefore(cutoff))
 			stats.removeFirst();

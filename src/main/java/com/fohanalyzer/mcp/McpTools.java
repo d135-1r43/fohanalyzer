@@ -1,5 +1,6 @@
 package com.fohanalyzer.mcp;
 
+import com.fohanalyzer.dsp.LeqMeter;
 import com.fohanalyzer.engine.Engine;
 import com.fohanalyzer.engine.Zone;
 import io.modelcontextprotocol.json.McpJsonMapper;
@@ -100,6 +101,10 @@ public final class McpTools
 		  "type": "object",
 		  "properties": {
 		    "interval_seconds": { "type": "number" },
+		    "leq_weighting": {
+		      "type": "string",
+		      "description": "Frequency weighting of leq_db: Z is unweighted"
+		    },
 		    "count": { "type": "integer" },
 		    "dominant_peaks": {
 		      "type": "array",
@@ -127,6 +132,15 @@ public final class McpTools
 		          "solo_peak_db": { "type": ["number", "null"] },
 		          "mic_rms_dbfs": { "type": ["number", "null"] },
 		          "spl_db": { "type": ["number", "null"] },
+		          "leq_db": {
+		            "type": ["number", "null"],
+		            "description": "Equivalent continuous level in dB SPL over leq_window_s, weighted per leq_weighting"
+		          },
+		          "leq_window_s": { "type": ["integer", "null"] },
+		          "leq_integrated_s": {
+		            "type": ["number", "null"],
+		            "description": "How much of the window was filled; less than leq_window_s after a reset"
+		          },
 		          "mic_live": { "type": "boolean" },
 		          "solo_live": { "type": "boolean" }
 		        },
@@ -134,7 +148,7 @@ public final class McpTools
 		      }
 		    }
 		  },
-		  "required": ["interval_seconds", "count", "dominant_peaks", "samples"]
+		  "required": ["interval_seconds", "leq_weighting", "count", "dominant_peaks", "samples"]
 		}
 		""";
 
@@ -190,6 +204,8 @@ public final class McpTools
 			spec(STATS_HISTORY, "Spectrum readout history",
 				"Once-a-second readouts (loudest mic band, mic/solo averages and peaks, SPL) for"
 					+ " the last minutes, plus the frequencies that were loudest most often."
+					+ " spl_db is an instantaneous reading; for the level over time use leq_db, which"
+					+ " integrates every sample over leq_window_s — do not average spl_db instead."
 					+ " Samples with mic_live=false come from the built-in simulator, not a real mic.",
 				STATS_HISTORY_INPUT, STATS_HISTORY_OUTPUT, this::statsHistory),
 			spec(BAND_SNAPSHOT, "Current band levels",
@@ -282,6 +298,10 @@ public final class McpTools
 			m.put("solo_peak_db", round(s.soloPeak(), 1));
 			m.put("mic_rms_dbfs", s.micRmsDbfs() != null ? round(s.micRmsDbfs(), 1) : null);
 			m.put("spl_db", s.splDb() != null ? round(s.splDb(), 1) : null);
+			AnalyzerHistory.Leq leq = s.leq();
+			m.put("leq_db", leq != null ? round(leq.db(), 1) : null);
+			m.put("leq_window_s", leq != null ? leq.windowSeconds() : null);
+			m.put("leq_integrated_s", leq != null ? round(leq.integratedSeconds(), 1) : null);
 			m.put("mic_live", s.micLive());
 			m.put("solo_live", s.soloLive());
 			rows.add(m);
@@ -303,6 +323,7 @@ public final class McpTools
 
 		Map<String, Object> out = new LinkedHashMap<>();
 		out.put("interval_seconds", AnalyzerHistory.STATS_INTERVAL.toMillis() / 1000.0);
+		out.put("leq_weighting", LeqMeter.WEIGHTING);
 		out.put("count", rows.size());
 		out.put("dominant_peaks", dominant);
 		out.put("samples", rows);

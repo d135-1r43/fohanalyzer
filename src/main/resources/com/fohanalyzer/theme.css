@@ -144,7 +144,40 @@
 }
 .btn-prefs:hover { -fx-text-fill: -txt; -fx-border-color: -txt-mut; }
 
+/* ---- action strip: the momentary actions above the plot ---- */
+.action-strip {
+    -fx-background-color: -panel; -fx-border-color: -line; -fx-border-radius: 10; -fx-background-radius: 10;
+    -fx-padding: 5;
+}
+.strip-group { -fx-background-color: #0a0e14; -fx-border-color: -line; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 2; }
+.strip-seg { -fx-padding: 2; }
+.strip-seg .seg-btn { -fx-padding: 5 10 5 10; -fx-max-width: -1; }
+.strip-btn {
+    -fx-background-color: transparent; -fx-text-fill: -txt-dim; -fx-font-size: 12px; -fx-font-weight: bold;
+    -fx-background-radius: 6; -fx-padding: 5 9 5 9; -fx-cursor: hand; -fx-graphic-text-gap: 6;
+}
+.strip-btn:hover { -fx-text-fill: -txt; }
+.strip-btn.on { -fx-background-color: #1d2a36; -fx-text-fill: -txt; }
+.strip-btn:disabled { -fx-opacity: 0.35; }
+.strip-sep { -fx-background-color: -line; -fx-min-width: 1; -fx-pref-width: 1; -fx-pref-height: 22; -fx-max-height: 22; }
+.strip-act { -fx-background-color: -panel-2; -fx-border-color: -line; -fx-border-radius: 7; -fx-text-fill: -txt; }
+.strip-capture { -fx-text-fill: -cyan; -fx-border-color: rgba(34,211,238,0.4); -fx-background-color: rgba(34,211,238,0.06); }
+.strip-detect { -fx-text-fill: #ffb3b6; -fx-border-color: rgba(255,91,96,0.45); -fx-background-color: rgba(255,91,96,0.06); }
+.context-menu { -fx-background-color: #131b25; -fx-border-color: -line; -fx-border-radius: 7; -fx-background-radius: 7; -fx-padding: 4; }
+.context-menu .menu-item { -fx-background-radius: 5; -fx-padding: 6 12 6 12; }
+.context-menu .menu-item .label { -fx-text-fill: -txt; -fx-font-size: 12px; }
+.context-menu .menu-item:focused { -fx-background-color: #1d2a36; }
+.context-menu .menu-item:disabled .label { -fx-text-fill: -txt-mut; }
+
 /* ---- preferences window ---- */
+.prefs-nav { -fx-background-color: #0b1018; -fx-border-color: -line; -fx-border-width: 0 1 0 0; -fx-padding: 14 8 14 8; }
+.prefs-nav-btn {
+    -fx-background-color: transparent; -fx-text-fill: -txt-dim; -fx-font-size: 13px; -fx-alignment: center-left;
+    -fx-background-radius: 7; -fx-padding: 7 10 7 10; -fx-cursor: hand;
+}
+.prefs-nav-btn:hover { -fx-text-fill: -txt; }
+.prefs-nav-btn.on { -fx-background-color: #1d2a36; -fx-text-fill: -txt; -fx-font-weight: bold; }
+.danger-btn { -fx-text-fill: #ffb3b6; -fx-border-color: rgba(255,91,96,0.4); }
 .prefs-root { -fx-background-color: -bg; }
 .prefs-body { -fx-padding: 18 22 18 22; }
 .prefs-foot {
@@ -160,6 +193,12 @@
 .src-name { -fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: -txt; }
 /* The read-only echo of what the preferences window has this source set to. */
 .src-sel { -fx-font-family: "IBM Plex Mono", monospace; -fx-font-size: 11px; -fx-text-fill: -txt-dim; }
+.src-level { -fx-font-family: "IBM Plex Mono", monospace; -fx-font-size: 14px; -fx-font-weight: bold; }
+.src-detail { -fx-font-family: "IBM Plex Mono", monospace; -fx-font-size: 10px; -fx-text-fill: -txt-mut; }
+/* An active trim is shown in the solo accent: an offset trace must not pass for a raw one. */
+.src-detail-on { -fx-text-fill: -amber; }
+.src-detail-peak { -fx-text-fill: #e9fb9b; -fx-font-weight: bold; }
+.sec-aside { -fx-font-family: "IBM Plex Mono", monospace; -fx-font-size: 9.5px; -fx-text-fill: #3f4c5a; }
 .marker-pill {
     -fx-font-family: "IBM Plex Mono", monospace; -fx-font-size: 10px;
     -fx-background-color: transparent; -fx-border-color: -line; -fx-text-fill: -txt-mut;
@@ -210,13 +249,23 @@
     -fx-background-color: -panel-2; -fx-border-color: rgba(163,230,53,0.15);
     -fx-border-radius: 10; -fx-background-radius: 10; -fx-padding: 11 14 11 14;
 }
-.spl-val { -fx-font-family: "IBM Plex Mono", monospace; -fx-font-size: 30px; -fx-font-weight: bold; -fx-text-fill: -lime; }
+.spl-val { -fx-font-family: "IBM Plex Mono", monospace; -fx-font-size: 38px; -fx-font-weight: bold; -fx-text-fill: -lime; }
 .spl-unit { -fx-font-family: "IBM Plex Mono", monospace; -fx-font-size: 11px; -fx-text-fill: -txt-mut; }
 .spl-badge {
     -fx-font-family: "IBM Plex Mono", monospace; -fx-font-size: 9px; -fx-font-weight: bold;
     -fx-background-color: rgba(255,255,255,0.05); -fx-text-fill: -txt-mut;
     -fx-border-color: -line; -fx-border-radius: 4; -fx-background-radius: 4; -fx-padding: 3 7 3 7;
 }
+.spl-cell {
+    -fx-background-color: -panel-2; -fx-border-color: -line;
+    -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 6 8 6 8;
+}
+.spl-cell-lbl { -fx-font-family: "IBM Plex Mono", monospace; -fx-font-size: 9px; -fx-text-fill: -txt-mut; }
+.spl-cell-val { -fx-font-family: "IBM Plex Mono", monospace; -fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: -txt; }
+.spl-prog { -fx-pref-height: 6; -fx-max-height: 6; }
+.spl-prog > .track { -fx-background-color: #1a2430; -fx-background-radius: 3; -fx-background-insets: 0; }
+.spl-prog > .bar { -fx-background-color: -lime; -fx-background-radius: 3; -fx-background-insets: 0; -fx-padding: 3; -fx-opacity: 0.75; }
+.spl-progress { -fx-font-family: "IBM Plex Mono", monospace; -fx-font-size: 11px; -fx-text-fill: -txt-dim; }
 .spl-input {
     -fx-background-color: #131b25; -fx-border-color: -line; -fx-border-radius: 7; -fx-background-radius: 7;
     -fx-text-fill: -txt; -fx-font-family: "IBM Plex Mono", monospace; -fx-font-size: 13px;

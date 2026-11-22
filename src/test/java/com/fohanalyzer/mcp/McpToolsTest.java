@@ -52,7 +52,8 @@ class McpToolsTest
 	{
 		for (int i = 0; i < 5; i++)
 		{
-			history.recordStats(new Stats(i < 3 ? 250 : 4000, -20, -40, -45, -25, 0, -18.0), 97.0, true, true);
+			history.recordStats(new Stats(i < 3 ? 250 : 4000, -20, -40, -45, -25, 0, -18.0), 97.0,
+				new AnalyzerHistory.Leq(96.44, 300, 12.34), true, true);
 			clock.advance(Duration.ofSeconds(1));
 		}
 
@@ -65,9 +66,24 @@ class McpToolsTest
 	}
 
 	@Test
+	void statsHistoryNamesTheLeqsWeightingAndWindow() throws IOException
+	{
+		history.recordStats(new Stats(250, -20, -40, -45, -25, 0, -18.0), 97.0,
+			new AnalyzerHistory.Leq(96.44, 300, 12.34), true, true);
+
+		Map<String, Object> out = tools.statsHistory(Map.of());
+		assertValid(McpTools.STATS_HISTORY_OUTPUT, out);
+		assertEquals("Z", out.get("leq_weighting"));
+		Map<?, ?> sample = (Map<?, ?>)((List<?>)out.get("samples")).getFirst();
+		assertEquals(96.4, sample.get("leq_db"));
+		assertEquals(300, sample.get("leq_window_s"));
+		assertEquals(12.3, sample.get("leq_integrated_s"));
+	}
+
+	@Test
 	void outOfRangeMinutesAreClamped()
 	{
-		history.recordStats(new Stats(250, -20, -40, -45, -25, 0, null), null, false, false);
+		history.recordStats(new Stats(250, -20, -40, -45, -25, 0, null), null, null, false, false);
 		assertEquals(1, tools.statsHistory(Map.of("minutes", 9999)).get("count"));
 	}
 

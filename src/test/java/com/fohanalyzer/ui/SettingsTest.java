@@ -59,6 +59,7 @@ class SettingsTest
 		first.spectroHistory.set(60);
 		first.spectroFloor.set(-95);
 		first.spectroCeiling.set(-20);
+		first.leqWindow.set(900);
 
 		AppState next = new AppState();
 		new Settings(node).bind(next);
@@ -79,6 +80,18 @@ class SettingsTest
 		assertEquals(60, next.spectroHistory.get());
 		assertEquals(-95, next.spectroFloor.get(), 1e-9);
 		assertEquals(-20, next.spectroCeiling.get(), 1e-9);
+		assertEquals(900, next.leqWindow.get());
+	}
+
+	@Test
+	void anLeqWindowTheMeterDoesNotOfferFallsBackToTheDefault()
+	{
+		node.putInt("leqWindow", 120);
+
+		AppState st = new AppState();
+		settings.bind(st);
+
+		assertEquals(new AppState().leqWindow.get(), st.leqWindow.get());
 	}
 
 	@Test

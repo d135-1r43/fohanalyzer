@@ -1,5 +1,6 @@
 package com.fohanalyzer.audio;
 
+import com.fohanalyzer.dsp.LeqMeter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,6 +60,9 @@ public final class AudioSource
 
 	private volatile Analysis latest;
 
+	/** Fed every captured sample of the selected channel, when set. */
+	private volatile LeqMeter levelMeter;
+
 	public boolean isConnected()
 	{
 		return line != null && running;
@@ -102,6 +106,16 @@ public final class AudioSource
 	private int maxChannelIndex()
 	{
 		return Math.max(0, channelCount - (stereo ? 2 : 1));
+	}
+
+	/**
+	 * Integrate every captured sample into {@code meter} from now on, or stop
+	 * with {@code null}. A pair is fed as a pair, so the meter can combine it
+	 * the way the rest of the analyzer does.
+	 */
+	public void setLevelMeter(LeqMeter meter)
+	{
+		this.levelMeter = meter;
 	}
 
 	public String getError()
@@ -280,6 +294,8 @@ public final class AudioSource
 		// Reused across blocks; only this thread touches them.
 		float[] l = new float[FFT_SIZE];
 		float[] r = new float[FFT_SIZE];
+		float[] blockL = new float[READ_FRAMES];
+		float[] blockR = new float[READ_FRAMES];
 		try
 		{
 			while (running && line != null)
@@ -297,15 +313,20 @@ public final class AudioSource
 					for (int fr = 0; fr < frames; fr++)
 					{
 						int base = fr * frameSize;
-						ring[ringPos] = sampleToFloat(buf, base + idx * bytesPerSample, bytesPerSample);
-						ringR[ringPos] = pair
+						blockL[fr] = sampleToFloat(buf, base + idx * bytesPerSample, bytesPerSample);
+						blockR[fr] = pair
 							? sampleToFloat(buf, base + (idx + 1) * bytesPerSample, bytesPerSample)
 							: 0f;
+						ring[ringPos] = blockL[fr];
+						ringR[ringPos] = blockR[fr];
 						ringPos = (ringPos + 1) % FFT_SIZE;
 					}
 					copyWindow(l, r, pair);
 				}
 				latest = analyse(l, r, pair);
+
+				LeqMeter meter = levelMeter;
+				if (meter != null) meter.accept(blockL, pair ? blockR : null, frames, sampleRate);
 			}
 		}
 		catch (Exception e)

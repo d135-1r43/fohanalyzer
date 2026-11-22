@@ -2,6 +2,7 @@ package com.fohanalyzer.ui;
 
 import com.fohanalyzer.audio.AudioDevice;
 import com.fohanalyzer.audio.AudioSource;
+import com.fohanalyzer.dsp.LeqMeter;
 import com.fohanalyzer.dsp.Stats;
 import com.fohanalyzer.engine.Voice;
 import com.fohanalyzer.mcp.AnalyzerHistory;
@@ -96,6 +97,11 @@ public final class AppState
 	public final BooleanProperty showReference = new SimpleBooleanProperty(true);
 	public final ObservableList<FeedbackEntry> feedbackLog = FXCollections.observableArrayList();
 	public final ObjectProperty<Double> locateFreq = new SimpleObjectProperty<>(null);
+	/**
+	 * What the last Detect ring found, or why it found nothing; empty before
+	 * one.
+	 */
+	public final StringProperty detectStatus = new SimpleStringProperty("");
 
 	// Readouts / SPL
 	public final ObjectProperty<Stats> stats = new SimpleObjectProperty<>(new Stats(0, -90, -90, -90, -90, 0, null));
@@ -107,6 +113,33 @@ public final class AppState
 	 * Calibrating switches it on.
 	 */
 	public final BooleanProperty showSpl = new SimpleBooleanProperty(false);
+
+	/** Leq windows the SPL meter offers, in seconds. */
+	public static final List<Integer> LEQ_WINDOWS = List.of(10, 60, 300, 900, 3600);
+	/**
+	 * {@code "LZeq · 5 min"}: what an Leq over {@code windowSeconds} is, with
+	 * the weighting and window that make it mean something.
+	 */
+	public static String leqLabel(int windowSeconds)
+	{
+		return "L" + LeqMeter.WEIGHTING + "eq · " + windowLabel(windowSeconds);
+	}
+
+	/** {@code 10 -> "10 s"}, {@code 300 -> "5 min"}. */
+	public static String windowLabel(int seconds)
+	{
+		return seconds < 60 ? seconds + " s" : seconds / 60 + " min";
+	}
+
+	/** Seconds the SPL meter's Leq is taken over. */
+	public final IntegerProperty leqWindow = new SimpleIntegerProperty(300);
+	/**
+	 * Integrates the live mic. Thread-safe: fed from the capture thread, read
+	 * from the FX thread and the MCP server's.
+	 */
+	public final LeqMeter leq = new LeqMeter();
+	/** Where this session's SPL log is being written, once it is. */
+	public final StringProperty splLogFile = new SimpleStringProperty(null);
 
 	public final ObservableList<AudioDevice> audioDevices = FXCollections.observableArrayList();
 

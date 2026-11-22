@@ -5,11 +5,13 @@ carries the `.dmg`. Dependency bumps are summarised rather than listed one by on
 
 ## [Unreleased]
 
+## [2.7.0] — 2026-11-22
+
 ### Added
 
 - A spectrograph: a scrolling time × frequency view on the RTA's frequency axis, newest at the
-  top. The new **View** section on the rail switches between the RTA, a split with the
-  spectrograph under the RTA, and the spectrograph alone. It shows the mic, the solo bus or
+  top. The strip above the plot switches between the RTA, a split with the spectrograph
+  under the RTA, and the spectrograph alone. It shows the mic, the solo bus or
   Mic−Solo, over 10, 30 or 60 seconds, with an adjustable colour range. A located ring is
   marked down through it too.
 - The SPL meter keeps a record instead of one passing number. It shows the Leq over a
@@ -18,6 +20,15 @@ carries the `.dmg`. Dependency bumps are summarised rather than listed one by on
   is logged to a CSV in `~/Documents/FOHanalyzer/SPL logs`, one file per session. Levels
   are unweighted for now and labelled Z (`LZeq · 5 min`). The MCP `get_stats_history` tool
   reports the Leq with its window and weighting.
+- An optional venue SPL limit, set in Preferences → SPL meter as a level, weighting and
+  window (e.g. 98 dB LZeq · 15 min). On a calibrated meter the Leq turns amber within 3 dB
+  of it and red above it. The rail adds a bar that marks the limit, the time spent over it
+  since the last reset, and a 30-minute trend that shades every minute above the limit.
+  `get_stats_history` reports the limit and how far and how long the level went over.
+- SPL calibrations are kept per interface and channel. Picking an input brings its own
+  calibration. An input without one reads dBFS and never borrows another rig's offset.
+  Preferences lists every saved calibration with its date and reference, and flags any
+  older than 30 days.
 
 ### Changed
 
@@ -27,6 +38,8 @@ carries the `.dmg`. Dependency bumps are summarised rather than listed one by on
   and the Leq window), and a **strip above the plot** has what you press during a show —
   the view, traces and overlays, *Capture reference*, *Detect ring* and a *Reset* menu.
 - The header no longer repeats the readouts; it shows the wordmark and the live status.
+- Every level can be typed in a text field: the solo trim, the spectrograph range, the SPL
+  calibration and the limit. Enter applies, Escape reverts.
 
 ### Removed
 
@@ -111,7 +124,8 @@ The first release of the JavaFX version, shipped as a self-contained macOS bundl
 - Logs through SLF4J instead of the console.
 - Licensed under GPL-3.0-or-later.
 
-[Unreleased]: https://github.com/d135-1r43/fohanalyzer-java/compare/fohanalyzer-java-2.6.0...HEAD
+[Unreleased]: https://github.com/d135-1r43/fohanalyzer-java/compare/fohanalyzer-java-2.7.0...HEAD
+[2.7.0]: https://github.com/d135-1r43/fohanalyzer-java/releases/tag/fohanalyzer-java-2.7.0
 [2.6.0]: https://github.com/d135-1r43/fohanalyzer-java/releases/tag/fohanalyzer-java-2.6.0
 [2.5.0]: https://github.com/d135-1r43/fohanalyzer-java/releases/tag/fohanalyzer-java-2.5.0
 [2.4.0]: https://github.com/d135-1r43/fohanalyzer-java/releases/tag/fohanalyzer-java-2.4.0

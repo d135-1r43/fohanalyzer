@@ -116,6 +116,16 @@ public final class AnalyzerHistory
 			stats.removeFirst();
 	}
 
+	/**
+	 * Dev aid: keep {@code sample} at its own time, for staging a show that has
+	 * been running a while. Samples go in oldest first, before the frame loop
+	 * records any.
+	 */
+	public synchronized void backfill(StatsSample sample)
+	{
+		stats.addLast(sample);
+	}
+
 	public void recordBands(int frac, double[] centers, float[] mic, float[] solo, boolean micLive,
 		boolean soloLive)
 	{

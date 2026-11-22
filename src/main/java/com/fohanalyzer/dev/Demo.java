@@ -2,11 +2,13 @@ package com.fohanalyzer.dev;
 
 import com.fohanalyzer.audio.AudioDevice;
 import com.fohanalyzer.engine.Engine;
+import com.fohanalyzer.mcp.AnalyzerHistory;
 import com.fohanalyzer.ui.AppState;
 import com.fohanalyzer.ui.FeedbackEntry;
 import javafx.animation.PauseTransition;
 import javafx.util.Duration;
 
+import java.time.Instant;
 import java.util.Random;
 
 /**
@@ -14,7 +16,7 @@ import java.util.Random;
  * in progress instead of the stored settings and real inputs, for the
  * screenshots in the README and on the website. Run with {@code PROBE} to
  * snapshot it:
- * {@code FOH_DEMO=true PROBE=6 PROBE_PREFS=0 mvn -q -o javafx:run}.
+ * {@code FOH_DEMO=true PROBE=13 PROBE_PREFS=1 mvn -q -o javafx:run}.
  *
  * <p>
  * Both sources are named as live channels of an interface, but no line is
@@ -33,6 +35,13 @@ public final class Demo
 	 * How much of the Leq window has been integrated when the shot is taken.
 	 */
 	private static final double INTEGRATED_SECONDS = 192;
+	/**
+	 * The venue limit; the programme sits just under it, so the Leq reads
+	 * amber.
+	 */
+	private static final double LIMIT = 98;
+	/** How much Leq history the limit trend is staged with. */
+	private static final int TREND_SECONDS = 30 * 60;
 
 	private Demo()
 	{
@@ -62,6 +71,13 @@ public final class Demo
 		state.showSpl.set(true);
 		state.leqWindow.set(300);
 		feedProgramme(state);
+		state.splLimit.set(LIMIT);
+		state.splLimitOn.set(true);
+		backfillTrend(state);
+
+		// Split, so the shot shows the spectrograph under the RTA.
+		state.view.set(AppState.VIEW_SPLIT);
+		state.spectroHistory.set(10);
 
 		state.markers.set(true);
 		state.markerSource.set("mic");
@@ -86,6 +102,28 @@ public final class Demo
 			if (Math.abs(Math.log(b / hz)) < Math.abs(Math.log(band / hz))) band = b;
 		}
 		state.feedbackLog.add(new FeedbackEntry(System.nanoTime(), hz, Engine.noteName(hz), band, cut, time));
+	}
+
+	/**
+	 * The last half hour of Leq for the limit trend: a set that builds, goes
+	 * over the limit for a few minutes in the middle, and comes back under it.
+	 * The time over since the reset is the same few minutes.
+	 */
+	private static void backfillTrend(AppState state)
+	{
+		Instant now = Instant.now();
+		double over = 0;
+		for (int ago = TREND_SECONDS; ago > 0; ago--)
+		{
+			double t = (TREND_SECONDS - ago) / (double)TREND_SECONDS;
+			double db = 93.5 + 2.5 * t + 5 * Math.exp(-Math.pow((t - 0.55) / 0.12, 2)) + 0.6 * Math.sin(ago / 47.0);
+			if (db > LIMIT) over++;
+			AnalyzerHistory.Leq leq = new AnalyzerHistory.Leq(db, state.leqWindow.get(), state.leqWindow.get(),
+				LIMIT);
+			state.history.backfill(new AnalyzerHistory.StatsSample(now.minusSeconds(ago), 0, 0, 0, 0, 0, null, db,
+				leq, true, true));
+		}
+		state.timeOverLimit.tick(over, LIMIT + 1, LIMIT);
 	}
 
 	/**

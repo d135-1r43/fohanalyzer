@@ -433,7 +433,7 @@ public final class PreferencesWindow
 		HBox logsRow = new HBox(logsLbl, logsSp, miniBtn("Show in Finder", e -> showSplLogs()));
 		logsRow.setAlignment(Pos.CENTER_LEFT);
 		Label logsHint = hint("While the meter is calibrated, every second is written to a CSV in "
-			+ SplLog.defaultDir() + ", one file per session.");
+			+ SplLog.displayPath(SplLog.defaultDir()) + ", one file per session.");
 
 		VBox sec = section("SPL meter", showRow, label("Calibration · this input"), inputLbl, calState,
 			needsLive, nudgeRow, calRow, howTo, label("Saved calibrations"), savedCalibrations(), winLbl,

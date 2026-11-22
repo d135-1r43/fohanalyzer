@@ -71,6 +71,13 @@ public final class SplLog
 		this.clock = clock;
 	}
 
+	/** {@code dir} for reading, with the home folder shortened to {@code ~}. */
+	public static String displayPath(Path dir)
+	{
+		Path home = Path.of(System.getProperty("user.home"));
+		return dir.startsWith(home) ? "~/" + home.relativize(dir) : dir.toString();
+	}
+
 	/** Where the logs go: a folder of their own under Documents. */
 	public static Path defaultDir()
 	{

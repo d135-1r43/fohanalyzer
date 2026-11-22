@@ -160,6 +160,9 @@ public class MainApp extends Application
 	private void maybeSnapshot(BorderPane root, ControlRail rail, double delaySeconds)
 	{
 		String prefsPage = System.getenv("PROBE_PREFS");
+		// Wherever the pointer happens to be, it must not put a hover readout
+		// in the shot.
+		root.setMouseTransparent(true);
 		var wait = new javafx.animation.PauseTransition(Duration.seconds(delaySeconds));
 		wait.setOnFinished(e -> {
 			boolean exitNow = true;

@@ -155,7 +155,7 @@
 
 		<figure class="shot shot--float">
 			<img class="shot__img" src="assets/img/screenshot.png" width="1366" height="820"
-				alt="The FOHanalyzer window: a dual spectrum plot with a cyan measurement-mic trace over an amber solo-bus trace, frequency-zone legend along the bottom, and a control rail on the right with source cards, ring-out assist, overlays and reference capture."
+				alt="The FOHanalyzer window: a strip of view, trace and overlay buttons above a dual spectrum plot with a cyan measurement-mic trace over an amber solo-bus trace, and a rail on the right with the source levels, the SPL meter reading 97.1 dB LZeq over 5 minutes, and the logged feedback rings."
 				fetchpriority="high" decoding="async">
 		</figure>
 	</div>
@@ -187,8 +187,8 @@
 		<p class="sec-title sec-title--cyan">What it does</p>
 		<h2>Everything you reach for during a line check</h2>
 		<p class="mt-4 lead measure">
-			Ordered the way a hand moves mid-show: the traces first, then the ring-out assist,
-			then the overlays, then the analysis settings you set once and forget.
+			What you press sits in a strip above the plot, what you read sits in the rail beside
+			it, and what you set once lives in Preferences.
 		</p>
 
 		<div class="mt-7 grid grid--wide">
@@ -228,11 +228,12 @@
 				<div class="feature__icon">
 					<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3Z"/><path d="M19 11a7 7 0 0 1-14 0M12 18v3"/></svg>
 				</div>
-				<h3 class="feature__title">Real SPL, not dBFS</h3>
+				<h3 class="feature__title">SPL with a memory</h3>
 				<p class="feature__text">
-					Calibrate once against a known reference level and the big lime readout is genuine
-					dB SPL, with a ± nudge for when it drifts from a hand-held meter. Until you
-					calibrate, the meter stays hidden rather than passing dBFS off as SPL.
+					Calibrate once against a known reference level and the meter reads genuine dB SPL:
+					the Leq over a window from 10 seconds to an hour, the Fast level, and the maximum
+					and peak since a reset. Every second of the show is logged to a CSV you can hand to
+					whoever asks what the level was.
 				</p>
 			</article>
 			</foh-reveal>
@@ -443,21 +444,23 @@
 
 		<div class="mt-8 split split--wide-first">
 			<div>
-				<p class="sec-title">A worked example: the rail and the window</p>
+				<p class="sec-title">A worked example: see, set, do</p>
 				<p class="dim">
-					The control rail is ordered by how often a hand reaches for something mid-show: the
-					source traces and what they read, then ring-out assist, then the overlays, then the
-					analysis settings last. Everything decided once when the rig is patched — which device
-					feeds each source, and the SPL calibration — lives in a separate <em>Preferences</em>
-					window instead, so it is not competing for the column you have to read during a show.
+					Every readout and control has one home, chosen by what you do with it. The rail on the
+					right only <em>shows</em>: each level once, the SPL meter, the logged rings, and what
+					the plot is computed with. Everything that is a setting — inputs, solo trim,
+					calibration, display and analysis options — lives in <em>Preferences</em>, one page
+					per area. And what you press during a show, from the view to <em>Detect ring</em>,
+					sits in a strip right above the plot it acts on.
 				</p>
 				<p class="mt-4 dim">
-					Nothing in that window is a commit step. The controls bind straight to the shared state
+					Nothing in Preferences is a commit step. The controls bind straight to the shared state
 					that gets persisted anyway, so there is nothing to apply and nothing to cancel — the
-					button in the corner only closes the window, and closing it changes nothing. The source
-					cards back on the rail still carry a read-only line naming the current selection, because
-					"is this trace live or simulated, and on which channel" is a question you ask at a glance
-					while working — even though the answer is only <em>set</em> once.
+					button in the corner only closes the window, and closing it changes nothing. The rail
+					still names what each setting is, as text — <code>trim −3.5 dB</code>,
+					<code>LZeq · 5 min</code> — because "what is this trace, and what is it computed with"
+					is a question you ask at a glance while working, even though the answer is only
+					<em>set</em> once.
 				</p>
 				<p class="mt-4 feature__text">
 					That is the level at which the whole codebase is documented, which is what makes it
@@ -467,11 +470,11 @@
 
 			<figure>
 				<div class="shot">
-					<img class="shot__img" src="assets/img/preferences.png" width="420" height="520"
-						alt="The Preferences window: an input device and channel picker for each source, and the SPL calibration field."
+					<img class="shot__img" src="assets/img/preferences.png" width="560" height="552"
+						alt="The Preferences window on its Sources page, with a sidebar of pages: an input device and channel picker for each source, a mono or stereo choice for the solo bus, and the solo trim."
 						loading="lazy" decoding="async">
 				</div>
-				<figcaption class="shot__caption">Preferences — set once, when the rig is patched</figcaption>
+				<figcaption class="shot__caption">Preferences — every setting, one page per area</figcaption>
 			</figure>
 		</div>
 	</div>
@@ -610,9 +613,9 @@
 				</div>
 				<div class="card__body">
 					<p>
-						The rail is ordered by how often a hand reaches for something mid-show. If that
-						ordering is wrong for how <em>you</em> work, that is a real bug, and saying so is a
-						real contribution.
+						The rail shows, Preferences sets, and the strip above the plot acts. If something
+						you need mid-show ended up in the wrong place for how <em>you</em> work, that is a
+						real bug, and saying so is a real contribution.
 					</p>
 				</div>
 				<p class="card__more">Tell us <span>→</span></p>

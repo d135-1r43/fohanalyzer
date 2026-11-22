@@ -20,7 +20,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/screenshot.png" alt="The analyzer window: dual spectrum plot with the control rail" width="100%">
+  <img src="docs/screenshot.png" alt="The analyzer window: the action strip above the dual spectrum plot, and the rail with source levels, the SPL meter and the logged rings" width="100%">
 </p>
 
 ## What it does
@@ -186,7 +186,7 @@ Preferences is a commit step: the controls bind straight to the shared state tha
 persisted anyway, so there is no OK/Cancel and nothing to apply.
 
 <p align="center">
-  <img src="docs/preferences.png" alt="The preferences window: source pickers and SPL calibration" width="380">
+  <img src="docs/preferences.png" alt="The preferences window on its Sources page: input and channel pickers for each source, and the solo trim" width="500">
 </p>
 
 ### Saved settings
@@ -369,10 +369,17 @@ JavaFX keys its parsed-stylesheet cache on the URL string, so re-adding the same
 after `clear()` — can hand back the stale parse; a filename it has never seen sidesteps the
 cache instead of relying on undocumented invalidation.
 
-**Render probe.** `PROBE=true mvn javafx:run` boots the app, snapshots the window to
-`target/probe-full.png` after ~2 s, and exits — handy for headless visual checks. Pass a
-number for a longer delay (`PROBE=20`), e.g. to snapshot *after* a hot reload. The screenshot
-at the top of this file is one of these.
+**Render probe.** `PROBE=true mvn javafx:run` boots the app, snapshots the window at twice
+its size to `target/probe-full.png` after ~2 s, and exits — handy for headless visual checks.
+Pass a number for a longer delay (`PROBE=20`), e.g. to snapshot *after* a hot reload, and
+`PROBE_PREFS=<page>` to also snapshot that Preferences page (0 is Sources) to
+`target/probe-prefs.png`.
+
+**Demo mode.** `FOH_DEMO=true` starts with a show in progress instead of the stored settings
+and real inputs: named live inputs, a calibrated SPL meter partway through its window, two
+logged rings and a reference. The screenshots in this file and on the website are
+`FOH_DEMO=true PROBE=7 PROBE_PREFS=0 mvn -q javafx:run`, with the main shot cropped to
+2732×1640.
 
 ## Licence
 

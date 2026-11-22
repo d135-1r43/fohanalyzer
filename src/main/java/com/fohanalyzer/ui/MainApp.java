@@ -4,6 +4,7 @@ import com.fohanalyzer.Version;
 import com.fohanalyzer.audio.AudioDevice;
 import com.fohanalyzer.audio.AudioInputs;
 import com.fohanalyzer.audio.AudioSource;
+import com.fohanalyzer.dev.Demo;
 import com.fohanalyzer.dsp.LeqMeter;
 import com.fohanalyzer.mcp.McpHttpServer;
 import com.fohanalyzer.ui.controls.Logo;
@@ -70,12 +71,15 @@ public class MainApp extends Application
 	});
 
 	private Label clockLabel;
+	/** A staged show for screenshots: no inputs, no stored settings, no log. */
+	private final boolean demo = Demo.enabled();
 
 	@Override
 	public void start(Stage stage)
 	{
 		// register the bundled families before any stylesheet resolves them
 		Fonts.install();
+		if (demo) Demo.stage(state);
 		AnalyzerView analyzer = new AnalyzerView(state);
 		// same 18px gutter as the header/rail
 		// The strip of actions sits on top of the plot it acts on.
@@ -109,13 +113,16 @@ public class MainApp extends Application
 		stage.requestFocus();
 		stage.setAlwaysOnTop(false);
 
-		wireLiveAudio();
 		startClock();
-		refreshDevices();
-		// After enumeration: a stored live input can only be restored once we
-		// know whether its interface is actually present.
-		settings.bind(state);
-		wireMcp();
+		if (!demo)
+		{
+			wireLiveAudio();
+			refreshDevices();
+			// After enumeration: a stored live input can only be restored once
+			// we know whether its interface is actually present.
+			settings.bind(state);
+			wireMcp();
+		}
 
 		stage.setOnCloseRequest(e -> {
 			settings.flush();
@@ -126,7 +133,7 @@ public class MainApp extends Application
 		});
 
 		String probe = System.getenv("PROBE");
-		if (probe != null && !probe.isBlank()) maybeSnapshot(root, probeDelaySeconds(probe));
+		if (probe != null && !probe.isBlank()) maybeSnapshot(root, rail, probeDelaySeconds(probe));
 	}
 
 	/**
@@ -147,19 +154,40 @@ public class MainApp extends Application
 
 	/**
 	 * Dev aid: with PROBE set, snapshot the whole window to
-	 * target/probe-full.png and exit.
+	 * target/probe-full.png at twice its size, and with PROBE_PREFS=n also
+	 * preferences page n to target/probe-prefs.png, then exit.
 	 */
-	private void maybeSnapshot(BorderPane root, double delaySeconds)
+	private void maybeSnapshot(BorderPane root, ControlRail rail, double delaySeconds)
 	{
+		String prefsPage = System.getenv("PROBE_PREFS");
 		var wait = new javafx.animation.PauseTransition(Duration.seconds(delaySeconds));
 		wait.setOnFinished(e -> {
+			boolean exitNow = true;
 			try
 			{
-				var img = root.snapshot(new javafx.scene.SnapshotParameters(), null);
-				javax.imageio.ImageIO.write(
-					javafx.embed.swing.SwingFXUtils.fromFXImage(img, null), "png",
-					new java.io.File("target/probe-full.png"));
-				log.info("probe wrote target/probe-full.png");
+				writeSnapshot(root, "target/probe-full.png");
+				if (prefsPage != null && !prefsPage.isBlank())
+				{
+					rail.showPreferences(Integer.parseInt(prefsPage.trim()));
+					exitNow = false;
+					// A beat for the window to lay out and size itself.
+					var settle = new javafx.animation.PauseTransition(Duration.seconds(1));
+					settle.setOnFinished(ev -> {
+						try
+						{
+							writeSnapshot(rail.preferencesRoot(), "target/probe-prefs.png");
+						}
+						catch (Exception ex)
+						{
+							log.warn("probe snapshot of the preferences failed", ex);
+						}
+						finally
+						{
+							Platform.exit();
+						}
+					});
+					settle.play();
+				}
 			}
 			catch (Exception ex)
 			{
@@ -167,10 +195,21 @@ public class MainApp extends Application
 			}
 			finally
 			{
-				Platform.exit();
+				if (exitNow) Platform.exit();
 			}
 		});
 		wait.play();
+	}
+
+	private static void writeSnapshot(javafx.scene.Node node, String path) throws java.io.IOException
+	{
+		var params = new javafx.scene.SnapshotParameters();
+		// Twice the size, so the image stays sharp on a high-density display.
+		params.setTransform(javafx.scene.transform.Transform.scale(2, 2));
+		var img = node.snapshot(params, null);
+		javax.imageio.ImageIO.write(javafx.embed.swing.SwingFXUtils.fromFXImage(img, null), "png",
+			new java.io.File(path));
+		log.info("probe wrote {}", path);
 	}
 
 	// ---- header -----------------------------------------------------------
@@ -376,6 +415,8 @@ public class MainApp extends Application
 	 */
 	private void logSpl()
 	{
+		if (demo) return;
+
 		LeqMeter.Interval interval = state.leq.drainInterval();
 		double off = state.splOffset.get();
 		boolean logging = state.isMicLive() && state.showSpl.get() && off != 0;

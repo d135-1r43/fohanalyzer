@@ -380,6 +380,19 @@ public final class ControlRail extends ScrollPane
 		preferences.show(getScene() != null ? getScene().getWindow() : null);
 	}
 
+	/** Opens the preferences window on page {@code page}; for the probe. */
+	void showPreferences(int page)
+	{
+		preferences.selectPage(page);
+		showPreferences();
+	}
+
+	/** The preferences window's content, once it is open; for the probe. */
+	javafx.scene.Parent preferencesRoot()
+	{
+		return preferences.root();
+	}
+
 	// ---- helpers ----------------------------------------------------------
 	private static VBox section(String title, Node... children)
 	{

@@ -156,6 +156,18 @@ public final class PreferencesWindow
 		});
 	}
 
+	/** Which page to open on, before {@link #show}. */
+	void selectPage(int index)
+	{
+		page = Math.clamp(index, 0, PAGES.length - 1);
+	}
+
+	/** The window's content while it is open, else null. */
+	javafx.scene.Parent root()
+	{
+		return stage != null ? stage.getScene().getRoot() : null;
+	}
+
 	/**
 	 * Whether the stored position still lands on a display. A window remembered
 	 * on a second monitor would otherwise reopen off in space when that monitor

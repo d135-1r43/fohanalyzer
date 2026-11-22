@@ -239,7 +239,7 @@ public class MainApp extends Application
 		top.getStyleClass().add("wm-top");
 		// The website sets this line with 0.14em tracking; JavaFX has no letter
 		// spacing, so each glyph gets its own label and the box spaces them.
-		HBox sub = tracked("DUAL SPECTRUM · RTA", 1.4, "wm-sub");
+		HBox sub = tracked("RTA · SPECTROGRAPH · SPL", 1.4, "wm-sub");
 		Label ver = new Label(Version.VALUE);
 		ver.getStyleClass().add("ver-chip");
 		// Chip on the title's own line, so it sits at cap height instead of

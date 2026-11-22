@@ -178,12 +178,30 @@ public class MainApp extends Application
 	}
 
 	// ---- header -----------------------------------------------------------
+	private static HBox tracked(String text, double tracking, String styleClass)
+	{
+		HBox box = new HBox(tracking);
+		box.setAlignment(Pos.BASELINE_LEFT);
+		box.setMouseTransparent(true);
+
+		for (int i = 0; i < text.length(); i++)
+		{
+			Label glyph = new Label(String.valueOf(text.charAt(i)));
+			glyph.getStyleClass().add(styleClass);
+			glyph.setMinWidth(Region.USE_PREF_SIZE);
+			box.getChildren().add(glyph);
+		}
+
+		return box;
+	}
+
 	private HBox buildHeader()
 	{
 		Label top = new Label("FOHanalyzer");
 		top.getStyleClass().add("wm-top");
-		Label sub = new Label("DUAL SPECTRUM · RTA");
-		sub.getStyleClass().add("wm-sub");
+		// The website sets this line with 0.14em tracking; JavaFX has no letter
+		// spacing, so each glyph gets its own label and the box spaces them.
+		HBox sub = tracked("DUAL SPECTRUM · RTA", 1.4, "wm-sub");
 		Label ver = new Label(Version.VALUE);
 		ver.getStyleClass().add("ver-chip");
 		// Chip on the title's own line, so it sits at cap height instead of

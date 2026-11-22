@@ -30,8 +30,9 @@
     -fx-alignment: center-left;
     -fx-spacing: 24;
 }
-.wm-top { -fx-font-size: 20px; -fx-text-fill: -txt; }
-.wm-sub { -fx-font-size: 9px; -fx-text-fill: -txt-mut; }
+/* Matches the website's .brand__name / .brand__sub. */
+.wm-top { -fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: -txt; }
+.wm-sub { -fx-font-size: 10px; -fx-text-fill: -txt-mut; }
 .ver-chip {
     -fx-font-family: "IBM Plex Mono", monospace; -fx-font-size: 11px; -fx-font-weight: bold;
     -fx-text-fill: -lime; -fx-border-color: rgba(163,230,53,0.35); -fx-border-radius: 5;

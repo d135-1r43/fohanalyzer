@@ -422,7 +422,11 @@ public class MainApp extends Application
 		boolean logging = state.isMicLive() && state.showSpl.get() && off != 0;
 		if (interval == null || !logging) return;
 
-		Path file = splLog.append(interval, state.leq.reading(state.leqWindow.get()), off);
+		LeqMeter.Reading reading = state.leq.reading(state.leqWindow.get());
+		// Ticked here rather than per frame: the drained interval is exactly
+		// the time that passed, and it stops when the meter does.
+		state.timeOverLimit.tick(interval.seconds(), reading.leqDb() + off, state.activeSplLimit());
+		Path file = splLog.append(interval, reading, off);
 		state.splLogFile.set(file.toString());
 	}
 

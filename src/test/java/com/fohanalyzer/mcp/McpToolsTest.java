@@ -81,6 +81,40 @@ class McpToolsTest
 	}
 
 	@Test
+	void statsHistoryNamesTheLimitAndHowLongItWasOver() throws IOException
+	{
+		// 4 minutes 1.5 dB over a 98 dB limit, then a minute under it.
+		for (int i = 0; i < 300; i++)
+		{
+			double leq = i < 240 ? 99.5 : 96;
+			history.recordStats(new Stats(250, -20, -40, -45, -25, 0, -18.0), leq,
+				new AnalyzerHistory.Leq(leq, 900, 900, 98.0), true, true);
+			clock.advance(Duration.ofSeconds(1));
+		}
+
+		Map<String, Object> out = tools.statsHistory(Map.of("minutes", 10));
+		assertValid(McpTools.STATS_HISTORY_OUTPUT, out);
+		Map<?, ?> limit = (Map<?, ?>)out.get("limit");
+		assertEquals(98.0, limit.get("limit_db"));
+		assertEquals(240.0, limit.get("seconds_over"));
+		assertEquals(1.5, limit.get("max_over_db"));
+		assertEquals(false, limit.get("over_now"));
+		Map<?, ?> sample = (Map<?, ?>)((List<?>)out.get("samples")).getFirst();
+		assertEquals(98.0, sample.get("leq_limit_db"));
+	}
+
+	@Test
+	void statsHistoryHasNoLimitWhenNoneIsSet() throws IOException
+	{
+		history.recordStats(new Stats(250, -20, -40, -45, -25, 0, -18.0), 97.0,
+			new AnalyzerHistory.Leq(96.44, 300, 12.34), true, true);
+
+		Map<String, Object> out = tools.statsHistory(Map.of());
+		assertValid(McpTools.STATS_HISTORY_OUTPUT, out);
+		assertNull(out.get("limit"));
+	}
+
+	@Test
 	void outOfRangeMinutesAreClamped()
 	{
 		history.recordStats(new Stats(250, -20, -40, -45, -25, 0, null), null, null, false, false);

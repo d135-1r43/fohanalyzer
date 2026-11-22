@@ -106,6 +106,26 @@ public final class McpTools
 		      "description": "Frequency weighting of leq_db: Z is unweighted"
 		    },
 		    "count": { "type": "integer" },
+		    "limit": {
+		      "type": ["object", "null"],
+		      "description": "The venue SPL limit the Leq was held against, and how it went in this range; null when no limit was set",
+		      "properties": {
+		        "limit_db": {
+		          "type": "number",
+		          "description": "The latest limit in dB SPL, weighted and windowed like leq_db"
+		        },
+		        "seconds_over": {
+		          "type": "number",
+		          "description": "Seconds in this range the Leq spent above its limit"
+		        },
+		        "max_over_db": {
+		          "type": ["number", "null"],
+		          "description": "The furthest the Leq went above its limit in this range; null if it never did"
+		        },
+		        "over_now": { "type": "boolean", "description": "Whether the latest Leq is above the limit" }
+		      },
+		      "required": ["limit_db", "seconds_over", "max_over_db", "over_now"]
+		    },
 		    "dominant_peaks": {
 		      "type": "array",
 		      "description": "Mic peak frequencies by how many samples they were the loudest band, most first",
@@ -141,6 +161,10 @@ public final class McpTools
 		            "type": ["number", "null"],
 		            "description": "How much of the window was filled; less than leq_window_s after a reset"
 		          },
+		          "leq_limit_db": {
+		            "type": ["number", "null"],
+		            "description": "The venue limit leq_db was held against; null when none was set"
+		          },
 		          "mic_live": { "type": "boolean" },
 		          "solo_live": { "type": "boolean" }
 		        },
@@ -148,7 +172,7 @@ public final class McpTools
 		      }
 		    }
 		  },
-		  "required": ["interval_seconds", "leq_weighting", "count", "dominant_peaks", "samples"]
+		  "required": ["interval_seconds", "leq_weighting", "count", "limit", "dominant_peaks", "samples"]
 		}
 		""";
 
@@ -206,6 +230,7 @@ public final class McpTools
 					+ " the last minutes, plus the frequencies that were loudest most often."
 					+ " spl_db is an instantaneous reading; for the level over time use leq_db, which"
 					+ " integrates every sample over leq_window_s — do not average spl_db instead."
+					+ " With a venue limit set, limit says how long and how far the Leq was over it."
 					+ " Samples with mic_live=false come from the built-in simulator, not a real mic.",
 				STATS_HISTORY_INPUT, STATS_HISTORY_OUTPUT, this::statsHistory),
 			spec(BAND_SNAPSHOT, "Current band levels",
@@ -302,6 +327,7 @@ public final class McpTools
 			m.put("leq_db", leq != null ? round(leq.db(), 1) : null);
 			m.put("leq_window_s", leq != null ? leq.windowSeconds() : null);
 			m.put("leq_integrated_s", leq != null ? round(leq.integratedSeconds(), 1) : null);
+			m.put("leq_limit_db", leq != null && leq.limitDb() != null ? round(leq.limitDb(), 1) : null);
 			m.put("mic_live", s.micLive());
 			m.put("solo_live", s.soloLive());
 			rows.add(m);
@@ -325,9 +351,35 @@ public final class McpTools
 		out.put("interval_seconds", AnalyzerHistory.STATS_INTERVAL.toMillis() / 1000.0);
 		out.put("leq_weighting", LeqMeter.WEIGHTING);
 		out.put("count", rows.size());
+		out.put("limit", limitSummary(samples));
 		out.put("dominant_peaks", dominant);
 		out.put("samples", rows);
 		return out;
+	}
+
+	/**
+	 * How the Leq fared against the venue limit over {@code samples}, or null
+	 * when none of them was held against one.
+	 */
+	private static Map<String, Object> limitSummary(List<AnalyzerHistory.StatsSample> samples)
+	{
+		List<AnalyzerHistory.StatsSample> limited = samples.stream()
+			.filter(s -> s.leq() != null && s.leq().limitDb() != null)
+			.toList();
+		if (limited.isEmpty()) return null;
+
+		// Each sample is held against the limit in force when it was taken.
+		double maxOver = limited.stream()
+			.mapToDouble(s -> s.leq().db() - s.leq().limitDb())
+			.max().orElseThrow();
+		AnalyzerHistory.Leq last = limited.getLast().leq();
+
+		Map<String, Object> m = new LinkedHashMap<>();
+		m.put("limit_db", round(last.limitDb(), 1));
+		m.put("seconds_over", round(AnalyzerHistory.secondsOverLimit(limited), 0));
+		m.put("max_over_db", maxOver > 0 ? round(maxOver, 1) : null);
+		m.put("over_now", last.db() > last.limitDb());
+		return m;
 	}
 
 	Map<String, Object> bandSnapshot(Map<String, Object> args)

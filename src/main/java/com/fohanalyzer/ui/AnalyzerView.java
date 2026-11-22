@@ -206,7 +206,9 @@ public final class AnalyzerView extends Region
 		LeqMeter.Reading r = state.leq.reading(window);
 		if (!Double.isFinite(r.leqDb())) return null;
 
-		return new AnalyzerHistory.Leq(r.leqDb() + state.splOffset.get(), window, r.integratedSeconds());
+		double limit = state.activeSplLimit();
+		return new AnalyzerHistory.Leq(r.leqDb() + state.splOffset.get(), window, r.integratedSeconds(),
+			Double.isFinite(limit) ? limit : null);
 	}
 
 	private void drawRta(GraphicsContext g, double[] centers, double width, double plotW, double rtaH,

@@ -111,8 +111,11 @@ public final class ActionStrip extends HBox
 		hold.setOnAction(e -> state.holdReset.set(state.holdReset.get() + 1));
 		hold.disableProperty().bind(state.peakHold.not());
 
-		MenuItem spl = new MenuItem("SPL Leq, max and peak");
-		spl.setOnAction(e -> state.leq.reset());
+		MenuItem spl = new MenuItem("SPL Leq, max, peak and time over");
+		spl.setOnAction(e -> {
+			state.leq.reset();
+			state.timeOverLimit.reset();
+		});
 		spl.visibleProperty().bind(state.showSpl);
 
 		MenuItem rings = new MenuItem("Ring log");

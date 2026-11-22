@@ -3,7 +3,11 @@ package com.fohanalyzer.ui;
 import com.fohanalyzer.Version;
 import com.fohanalyzer.dsp.LeqMeter;
 import com.fohanalyzer.dsp.Stats;
+import com.fohanalyzer.dsp.SplLimit;
 import com.fohanalyzer.engine.Engine;
+import com.fohanalyzer.mcp.AnalyzerHistory;
+import com.fohanalyzer.ui.controls.LeqTrend;
+import com.fohanalyzer.ui.controls.LimitBar;
 import com.fohanalyzer.ui.controls.SourceCard;
 import com.fohanalyzer.ui.controls.Trim;
 import javafx.application.HostServices;
@@ -15,6 +19,9 @@ import javafx.scene.layout.*;
 import javafx.scene.text.TextAlignment;
 
 import java.nio.file.Path;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -105,6 +112,19 @@ public final class ControlRail extends ScrollPane
 	private ProgressBar splProgressBar;
 	private Label splProgress;
 
+	/** How much of the past the limit trend shows. */
+	private static final Duration TREND_SPAN = Duration.ofMinutes(30);
+	/** The trend moves a second at a time; redrawing it more often is waste. */
+	private static final long TREND_REDRAW_NANOS = 1_000_000_000L;
+
+	private VBox limitBox;
+	private LimitBar limitBar;
+	private Label limitValue;
+	private Label limitOver;
+	private LeqTrend limitTrend;
+	private Label limitRecent;
+	private long trendDrawnAt;
+
 	private VBox splSection()
 	{
 		splValue = new Label("—");
@@ -146,7 +166,7 @@ public final class ControlRail extends ScrollPane
 		state.splLogFile.addListener((o, a, b) -> logLine.run());
 		logLine.run();
 
-		VBox display = new VBox(8, top, cells, splProgressBar, splProgress, logging);
+		VBox display = new VBox(8, top, limitSection(), cells, splProgressBar, splProgress, logging);
 		display.getStyleClass().add("spl-display");
 		VBox sec = section("SPL Meter", display);
 
@@ -160,9 +180,35 @@ public final class ControlRail extends ScrollPane
 		state.showSpl.addListener((o, a, b) -> vis.run());
 		state.splOffset.addListener((o, a, b) -> updateSpl());
 		state.leqWindow.addListener((o, a, b) -> updateSpl());
+		state.splLimitOn.addListener((o, a, b) -> updateSpl());
+		state.splLimit.addListener((o, a, b) -> updateSpl());
 		vis.run();
 		updateSpl();
 		return sec;
+	}
+
+	/**
+	 * The venue limit under the readout: a bar with the limit ticked, the time
+	 * spent over it, and the last half hour. Hidden entirely with no limit set.
+	 */
+	private VBox limitSection()
+	{
+		limitBar = new LimitBar();
+		limitValue = new Label();
+		limitValue.getStyleClass().add("limit-txt");
+		limitOver = new Label();
+		limitOver.getStyleClass().add("limit-txt");
+		Region sp = new Region();
+		HBox.setHgrow(sp, Priority.ALWAYS);
+		HBox line = new HBox(limitValue, sp, limitOver);
+		line.setAlignment(Pos.CENTER_LEFT);
+
+		limitTrend = new LeqTrend();
+		limitRecent = new Label();
+		limitRecent.getStyleClass().add("spl-progress");
+
+		limitBox = new VBox(5, limitBar, line, limitTrend, limitRecent);
+		return limitBox;
 	}
 
 	private static VBox splCell(String label, Label value)
@@ -194,10 +240,55 @@ public final class ControlRail extends ScrollPane
 		splFast.setText(fmtLevel(r.fastDb(), off));
 		splMax.setText(fmtLevel(r.maxDb(), off));
 		splPeak.setText(fmtLevel(r.peakDb(), off));
+		updateLimit(cal ? r.leqDb() + off : Double.NaN);
 		splProgressBar.setProgress(Math.min(1, r.integratedSeconds() / window));
 		splProgress.setText(r.isFilled()
 			? "rolling over the last " + fmtDuration(window)
 			: "integrating " + fmtDuration(r.integratedSeconds()) + " / " + fmtDuration(window));
+	}
+
+	/** The limit part of the meter, and the readout's colour against it. */
+	private void updateLimit(double leq)
+	{
+		double limit = state.activeSplLimit();
+		boolean on = Double.isFinite(limit);
+		limitBox.setVisible(on);
+		limitBox.setManaged(on);
+		splValue.getStyleClass().removeAll("near", "over");
+		if (!on) return;
+
+		switch (SplLimit.zone(leq, limit))
+		{
+			case NEAR -> splValue.getStyleClass().add("near");
+			case OVER -> splValue.getStyleClass().add("over");
+			default -> {
+			}
+		}
+		limitBar.set(leq, limit);
+		limitValue.setText(String.format(Locale.US, "limit %.1f dB", limit));
+		double over = state.timeOverLimit.seconds();
+		limitOver.setText("over " + fmtDuration(over));
+		limitOver.getStyleClass().remove("limit-txt-over");
+		if (over > 0) limitOver.getStyleClass().add("limit-txt-over");
+
+		long now = System.nanoTime();
+		if (now - trendDrawnAt < TREND_REDRAW_NANOS) return;
+		trendDrawnAt = now;
+
+		List<AnalyzerHistory.StatsSample> samples = state.history.stats(TREND_SPAN).stream()
+			.filter(s -> s.leq() != null)
+			.toList();
+		Instant at = Instant.now();
+		double[] ago = new double[samples.size()];
+		double[] levels = new double[samples.size()];
+		for (int i = 0; i < samples.size(); i++)
+		{
+			ago[i] = Duration.between(samples.get(i).at(), at).toMillis() / 1000.0;
+			levels[i] = samples.get(i).leq().db();
+		}
+		limitTrend.set(ago, levels, limit, TREND_SPAN.toSeconds());
+		long recent = Math.round(AnalyzerHistory.secondsOverLimit(samples) / 60);
+		limitRecent.setText("over in " + recent + " of the last " + TREND_SPAN.toMinutes() + " min");
 	}
 
 	// ---- Rings ------------------------------------------------------------

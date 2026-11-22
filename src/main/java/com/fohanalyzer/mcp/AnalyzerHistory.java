@@ -1,5 +1,6 @@
 package com.fohanalyzer.mcp;
 
+import com.fohanalyzer.dsp.SplLimit;
 import com.fohanalyzer.dsp.Stats;
 
 import java.time.Clock;
@@ -55,9 +56,15 @@ public final class AnalyzerHistory
 	/**
 	 * The SPL meter's equivalent continuous level in dB SPL, over the window it
 	 * was set to at the time, and how much of that window it had filled.
+	 * {@code limitDb} is the venue limit it was held against, null with none
+	 * set.
 	 */
-	public record Leq(double db, int windowSeconds, double integratedSeconds)
+	public record Leq(double db, int windowSeconds, double integratedSeconds, Double limitDb)
 	{
+		public Leq(double db, int windowSeconds, double integratedSeconds)
+		{
+			this(db, windowSeconds, integratedSeconds, null);
+		}
 	}
 
 	/**
@@ -143,6 +150,30 @@ public final class AnalyzerHistory
 			if (!s.at().isBefore(cutoff)) out.add(s);
 		}
 		return out;
+	}
+
+	/**
+	 * Seconds the Leq spent over its venue limit across {@code samples}, oldest
+	 * first, each held against the limit in force when it was taken. Samples
+	 * without a limit do not count.
+	 */
+	public static double secondsOverLimit(List<StatsSample> samples)
+	{
+		List<StatsSample> limited = samples.stream()
+			.filter(s -> s.leq() != null && s.leq().limitDb() != null)
+			.toList();
+		if (limited.isEmpty()) return 0;
+
+		double[] seconds = new double[limited.size()];
+		double[] overDb = new double[limited.size()];
+		Instant first = limited.getFirst().at();
+		for (int i = 0; i < limited.size(); i++)
+		{
+			Leq leq = limited.get(i).leq();
+			seconds[i] = Duration.between(first, limited.get(i).at()).toMillis() / 1000.0;
+			overDb[i] = leq.db() - leq.limitDb();
+		}
+		return SplLimit.secondsOver(seconds, overDb, 0, STATS_INTERVAL.toMillis() / 1000.0);
 	}
 
 	/** The latest band snapshot, or {@code null} before the first frame. */

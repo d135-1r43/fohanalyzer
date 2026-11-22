@@ -84,6 +84,38 @@ class SettingsTest
 	}
 
 	@Test
+	void theVenueLimitComesBackAndIsClearedByReset()
+	{
+		AppState first = new AppState();
+		settings.bind(first);
+		first.splLimitOn.set(true);
+		first.splLimit.set(98.5);
+
+		AppState next = new AppState();
+		Settings again = new Settings(node);
+		again.bind(next);
+
+		assertTrue(next.splLimitOn.get());
+		assertEquals(98.5, next.splLimit.get(), 1e-9);
+
+		again.reset(next);
+
+		assertFalse(next.splLimitOn.get());
+		assertEquals(new AppState().splLimit.get(), next.splLimit.get(), 1e-9);
+	}
+
+	@Test
+	void aLimitOutsideTheStepperFallsBackToTheDefault()
+	{
+		node.putDouble("splLimit", 400);
+
+		AppState st = new AppState();
+		settings.bind(st);
+
+		assertEquals(new AppState().splLimit.get(), st.splLimit.get(), 1e-9);
+	}
+
+	@Test
 	void anLeqWindowTheMeterDoesNotOfferFallsBackToTheDefault()
 	{
 		node.putInt("leqWindow", 120);

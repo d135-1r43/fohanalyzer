@@ -1,5 +1,6 @@
 package com.fohanalyzer.ui;
 
+import com.fohanalyzer.dsp.SplLimit;
 import com.fohanalyzer.mcp.McpHttpServer;
 import com.fohanalyzer.ui.controls.ChannelSelect;
 import com.fohanalyzer.ui.controls.Segmented;
@@ -356,7 +357,8 @@ public final class PreferencesWindow
 		nudgeLbl.getStyleClass().add("ctl-lbl");
 		Region nudgeSp = new Region();
 		HBox.setHgrow(nudgeSp, Priority.ALWAYS);
-		HBox nudgeRow = new HBox(nudgeLbl, nudgeSp, new Trim(state.splOffset, SPL_OFFSET_MIN, SPL_OFFSET_MAX, false));
+		HBox nudgeRow = new HBox(nudgeLbl, nudgeSp,
+			new Trim(state.splOffset, SPL_OFFSET_MIN, SPL_OFFSET_MAX, Trim.STEP, Double.NaN, Trim::fmtDb));
 		nudgeRow.setAlignment(Pos.CENTER_LEFT);
 		nudgeRow.disableProperty().bind(state.splOffset.isEqualTo(0));
 
@@ -366,6 +368,36 @@ public final class PreferencesWindow
 		for (int w : AppState.LEQ_WINDOWS)
 			winOpts.put(w, w < 60 ? w + " s" : w / 60 + " m");
 		Segmented window = new Segmented(state.leqWindow, winOpts);
+
+		// The venue limit: off unless a venue has one, so the rail stays as it
+		// is for everyone else.
+		Label limitLbl = new Label("Venue limit");
+		limitLbl.getStyleClass().add("ctl-lbl");
+		Region limitSp = new Region();
+		HBox.setHgrow(limitSp, Priority.ALWAYS);
+		HBox limitRow = new HBox(limitLbl, limitSp, new Toggle(state.splLimitOn, "#ff5b60"));
+		limitRow.setAlignment(Pos.CENTER_LEFT);
+
+		Label limitVal = new Label();
+		limitVal.getStyleClass().add("ctl-lbl");
+		Region limitValSp = new Region();
+		HBox.setHgrow(limitValSp, Priority.ALWAYS);
+		HBox limitValRow = new HBox(8, limitVal, limitValSp, new Trim(state.splLimit, AppState.SPL_LIMIT_MIN,
+			AppState.SPL_LIMIT_MAX, Trim.STEP, Double.NaN, Trim.LEVEL));
+		limitValRow.setAlignment(Pos.CENTER_LEFT);
+		Label limitHint = hint("");
+		Runnable limitText = () -> {
+			int w = state.leqWindow.get();
+			limitVal.setText("Limit, " + AppState.leqLabel(w));
+			limitHint.setText(state.splOffset.get() == 0
+				? "Calibrate first: a limit in dB SPL means nothing against an uncalibrated meter."
+				: "Held against the Leq above. Amber within " + Math.round(SplLimit.NEAR_DB)
+					+ " dB of the limit, red over it; the time over resets with the Leq.");
+		};
+		state.leqWindow.addListener((o, a, b) -> limitText.run());
+		state.splOffset.addListener((o, a, b) -> limitText.run());
+		limitText.run();
+		limitValRow.disableProperty().bind(state.splLimitOn.not());
 
 		Label logsLbl = new Label("Session logs");
 		logsLbl.getStyleClass().add("ctl-lbl");
@@ -377,7 +409,7 @@ public final class PreferencesWindow
 			+ SplLog.defaultDir() + ", one file per session.");
 
 		VBox sec = section("SPL meter", showRow, needsLive, calRow, howTo, status, nudgeRow, winLbl, window,
-			logsRow, logsHint);
+			limitRow, limitValRow, limitHint, logsRow, logsHint);
 
 		// Only a live mic produces the RMS the calibration is computed from.
 		// Just the controls are disabled: the notice and the status stay
@@ -527,7 +559,7 @@ public final class PreferencesWindow
 		Button reset = miniBtn("Reset saved settings…", e -> confirmReset());
 		reset.getStyleClass().add("danger-btn");
 		return section("General", reset,
-			hint("Clears the SPL calibration, the solo trim, the selected inputs and the display and"
+			hint("Clears the SPL calibration and limit, the solo trim, the selected inputs and the display and"
 				+ " analysis options."));
 	}
 
@@ -540,7 +572,7 @@ public final class PreferencesWindow
 	{
 		Alert alert = new Alert(Alert.AlertType.CONFIRMATION,
 			"Discard saved settings and return to defaults?\n\n"
-				+ "This clears the SPL calibration, the solo trim, the selected inputs and the display and"
+				+ "This clears the SPL calibration and limit, the solo trim, the selected inputs and the display and"
 				+ " analysis options.",
 			ButtonType.CANCEL, ButtonType.OK);
 		alert.setHeaderText("Reset saved settings");

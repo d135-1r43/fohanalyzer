@@ -3,6 +3,7 @@ package com.fohanalyzer.ui;
 import com.fohanalyzer.audio.AudioDevice;
 import com.fohanalyzer.audio.AudioSource;
 import com.fohanalyzer.dsp.LeqMeter;
+import com.fohanalyzer.dsp.SplLimit;
 import com.fohanalyzer.dsp.Stats;
 import com.fohanalyzer.engine.Voice;
 import com.fohanalyzer.mcp.AnalyzerHistory;
@@ -138,6 +139,31 @@ public final class AppState
 	 * from the FX thread and the MCP server's.
 	 */
 	public final LeqMeter leq = new LeqMeter();
+	/**
+	 * Hold the Leq against a venue limit. Off by default: without one the meter
+	 * shows nothing about limits at all.
+	 */
+	public final BooleanProperty splLimitOn = new SimpleBooleanProperty(false);
+	/**
+	 * The venue limit in dB SPL, weighted and windowed like the Leq it is
+	 * compared with.
+	 */
+	public final DoubleProperty splLimit = new SimpleDoubleProperty(100);
+	/** Range of the limit stepper. */
+	public static final double SPL_LIMIT_MIN = 60;
+	public static final double SPL_LIMIT_MAX = 140;
+	/** How long the Leq has been over the limit since the meter's reset. */
+	public final SplLimit.TimeOver timeOverLimit = new SplLimit.TimeOver();
+
+	/**
+	 * The limit the Leq is held against right now: set, and on a calibrated
+	 * meter, since a limit in dB SPL means nothing against dBFS. NaN otherwise.
+	 */
+	public double activeSplLimit()
+	{
+		return splLimitOn.get() && splOffset.get() != 0 ? splLimit.get() : Double.NaN;
+	}
+
 	/** Where this session's SPL log is being written, once it is. */
 	public final StringProperty splLogFile = new SimpleStringProperty(null);
 

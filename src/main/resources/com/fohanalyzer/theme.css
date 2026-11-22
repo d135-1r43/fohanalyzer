@@ -207,7 +207,14 @@
 
 /* ---- trim ---- */
 .trim-btn { -fx-padding: 3 7 3 7; -fx-font-size: 11px; }
-.trim-val { -fx-font-family: "IBM Plex Mono", monospace; -fx-font-size: 11px; -fx-text-fill: -txt-mut; -fx-cursor: hand; }
+/* The value between − and +: reads as text, types as a field. */
+.trim-val {
+    -fx-font-family: "IBM Plex Mono", monospace; -fx-font-size: 11px; -fx-text-fill: -txt-mut;
+    -fx-background-color: transparent; -fx-border-color: transparent; -fx-border-radius: 5;
+    -fx-padding: 2 4 2 4; -fx-highlight-fill: #1d2a36; -fx-highlight-text-fill: -txt;
+}
+.trim-val:hover { -fx-border-color: -line; }
+.trim-val:focused { -fx-background-color: #131b25; -fx-border-color: -txt-mut; -fx-text-fill: -txt; }
 /* An active trim is shown in the solo accent: an offset trace must not pass for a raw one. */
 .trim-val.trim-on { -fx-text-fill: -amber; -fx-font-weight: bold; }
 
@@ -250,6 +257,16 @@
     -fx-border-radius: 10; -fx-background-radius: 10; -fx-padding: 11 14 11 14;
 }
 .spl-val { -fx-font-family: "IBM Plex Mono", monospace; -fx-font-size: 38px; -fx-font-weight: bold; -fx-text-fill: -lime; }
+.spl-val.near { -fx-text-fill: -amber; }
+.spl-val.over { -fx-text-fill: #ff5b60; }
+/* ---- venue limit: only drawn when one is set ---- */
+.limit-bar-track { -fx-background-color: #1a2430; -fx-background-radius: 3; }
+.limit-bar-fill { -fx-background-color: -lime; -fx-background-radius: 3; -fx-opacity: 0.75; }
+.limit-bar-fill.near { -fx-background-color: -amber; }
+.limit-bar-fill.over { -fx-background-color: #ff5b60; -fx-opacity: 1; }
+.limit-bar-tick { -fx-background-color: #ff5b60; }
+.limit-txt { -fx-font-family: "IBM Plex Mono", monospace; -fx-font-size: 11px; -fx-text-fill: -txt-dim; }
+.limit-txt-over { -fx-text-fill: #ff5b60; -fx-font-weight: bold; }
 .spl-unit { -fx-font-family: "IBM Plex Mono", monospace; -fx-font-size: 11px; -fx-text-fill: -txt-mut; }
 .spl-badge {
     -fx-font-family: "IBM Plex Mono", monospace; -fx-font-size: 9px; -fx-font-weight: bold;

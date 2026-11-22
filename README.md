@@ -35,6 +35,9 @@
   the Fast level, and the maximum and peak since a reset, and logs every second of the
   session to a CSV under `~/Documents/FOHanalyzer/SPL logs`. Nothing is weighted yet, so the
   figures are labelled Z (`LZeq`, `LZF`, `LZpeak`).
+- **Venue SPL limit.** Set a limit in Preferences and the Leq turns amber within 3 dB of it
+  and red above it. The meter adds a bar with the limit marked, the time spent over it since
+  the last reset, and a 30-minute trend. With no limit set none of this is shown.
 - **Peak hold, peak markers, transfer function.** Overlays for the mic−solo difference and
   for what the plot did while you were not looking.
 - **Reference capture.** A dashed ghost of both traces, to A/B before against after EQ.
@@ -175,7 +178,7 @@ Every readout and control has one home, chosen by what you do with it:
   Nothing in it is a control; a setting the rail depends on is shown as text (`trim
   −44.0 dB`, `LZeq · 5 min`). Clicking a logged ring locates it on the plot.
 - **Set: Preferences (⌘,).** Every setting, one page per area: sources and solo trim, SPL
-  calibration, Leq window and logs, display (marker source, spectrograph), analysis
+  calibration, Leq window, venue limit and logs, display (marker source, spectrograph), analysis
   (resolution, smoothing, averaging), the MCP server, and resetting saved settings.
 - **Do: the strip above the plot.** What gets pressed during a show: RTA / Split /
   Spectro, which traces and overlays are drawn, *Capture reference*, *Detect ring*, and a

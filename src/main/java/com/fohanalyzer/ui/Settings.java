@@ -12,8 +12,8 @@ import java.util.prefs.Preferences;
 
 /**
  * Persists the parts of {@link AppState} an engineer would resent re-entering:
- * SPL calibration, the selected inputs and their trim, and the analysis/view
- * options.
+ * SPL calibration and venue limit, the selected inputs and their trim, and the
+ * analysis/view options.
  *
  * <p>
  * Backed by {@link Preferences}, so there is no dependency and no file format
@@ -30,6 +30,8 @@ public final class Settings
 	private static final String CAL_REF_SPL = "calRefSpl";
 	private static final String SHOW_SPL = "showSpl";
 	private static final String LEQ_WINDOW = "leqWindow";
+	private static final String SPL_LIMIT_ON = "splLimitOn";
+	private static final String SPL_LIMIT = "splLimit";
 	private static final String MIC_CHAN = "micChan";
 	private static final String SOLO_CHAN = "soloChan";
 	private static final String MIC_CHAN_IDX = "micChanIdx";
@@ -136,6 +138,8 @@ public final class Settings
 		state.calRefSpl.set(d.calRefSpl.get());
 		state.showSpl.set(d.showSpl.get());
 		state.leqWindow.set(d.leqWindow.get());
+		state.splLimitOn.set(d.splLimitOn.get());
+		state.splLimit.set(d.splLimit.get());
 		state.frac.set(d.frac.get());
 		state.smoothing.set(d.smoothing.get());
 		state.avgN.set(d.avgN.get());
@@ -229,6 +233,9 @@ public final class Settings
 			st.calRefSpl.get()));
 		st.smoothing.set(clamp(prefs.getDouble(SMOOTHING, st.smoothing.get()), 0, 0.95,
 			st.smoothing.get()));
+		st.splLimit.set(clamp(prefs.getDouble(SPL_LIMIT, st.splLimit.get()), AppState.SPL_LIMIT_MIN,
+			AppState.SPL_LIMIT_MAX, st.splLimit.get()));
+		st.splLimitOn.set(prefs.getBoolean(SPL_LIMIT_ON, st.splLimitOn.get()));
 		st.soloTrim.set(clamp(prefs.getDouble(SOLO_TRIM, st.soloTrim.get()), -AppState.SOLO_TRIM_MAX,
 			AppState.SOLO_TRIM_MAX, st.soloTrim.get()));
 		// A store from before this setting existed has no entry for it; keep
@@ -348,6 +355,8 @@ public final class Settings
 		st.spectroCeiling.addListener((o, a, v) -> prefs.putDouble(SPECTRO_CEILING, v.doubleValue()));
 		st.showSpl.addListener((o, a, v) -> prefs.putBoolean(SHOW_SPL, v));
 		st.leqWindow.addListener((o, a, v) -> prefs.putInt(LEQ_WINDOW, v.intValue()));
+		st.splLimitOn.addListener((o, a, v) -> prefs.putBoolean(SPL_LIMIT_ON, v));
+		st.splLimit.addListener((o, a, v) -> prefs.putDouble(SPL_LIMIT, v.doubleValue()));
 		st.mcpEnabled.addListener((o, a, v) -> prefs.putBoolean(MCP_ENABLED, v));
 		st.mcpPort.addListener((o, a, v) -> prefs.putInt(MCP_PORT, v.intValue()));
 	}

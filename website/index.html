@@ -70,8 +70,7 @@
 		<nav class="nav" aria-label="Primary">
 			<ul class="nav__list">
 				<li><a class="nav__link" href="#features">Features</a></li>
-				<li><a class="nav__link" href="#open-source">Open source</a></li>
-				<li><a class="nav__link" href="#internals">How it works</a></li>
+				<li><a class="nav__link" href="#video">Video</a></li>
 				<li><a class="nav__link" href="contribute.html">Contribute</a></li>
 			</ul>
 			<a class="btn btn--mini btn--lime" href="https://github.com/d135-1r43/fohanalyzer">
@@ -93,7 +92,7 @@
 	<div class="container hero__inner">
 		<div class="split split--wide-first split--center">
 			<div>
-				<p class="chip"><span class="chip__dot chip__dot--pulse"></span>Free software · GPL-3.0-or-later</p>
+				<p class="chip"><span class="chip__dot chip__dot--pulse"></span>Free and open source</p>
 
 				<h1 class="hero__title">
 					Everything FOH<br>
@@ -139,8 +138,8 @@
 
 				<div class="hero__readouts">
 					<div class="readout readout--cyan">
-						<span class="readout__label">Licence</span>
-						<span class="readout__value">GPL-3.0</span>
+						<span class="readout__label">Channels</span>
+						<span class="readout__value">2<small>mic · solo</small></span>
 					</div>
 					<div class="readout readout--amber">
 						<span class="readout__label">Resolution</span>
@@ -365,360 +364,17 @@
 	</div>
 </section>
 
-<!-- ===================== open source ===================== -->
-<section class="section section--ruled" id="open-source">
-	<div class="container">
-		<div class="split">
-			<div>
-				<p class="sec-title sec-title--lime">Open source</p>
-				<h2>Free as in freedom, and free as in it costs nothing</h2>
-				<p class="mt-4 lead">
-					FOHanalyzer is licensed <strong>GPL-3.0-or-later</strong>. You can read every line,
-					build it yourself, change what annoys you, and pass it on. There is no paid tier
-					waiting behind a feature, because there is no tier.
-				</p>
-				<p class="mt-4 dim">
-					The licence is not a marketing position — it is inherited.
-					<a href="https://github.com/JorenSix/TarsosDSP">TarsosDSP</a>, which does the FFT and
-					the pitch detection, is GPL-3.0, and linking against it means everything shipped here
-					has to be GPL-compatible too. That suits the project fine.
-				</p>
-
-				<div class="mt-6 btn-row">
-					<a class="btn btn--lime" href="contribute.html">How to contribute</a>
-					<a class="btn btn--ghost" href="https://github.com/d135-1r43/fohanalyzer/blob/master/LICENSE">Read the licence</a>
-				</div>
-			</div>
-
-			<div class="grid--sm grid">
-				<div class="readout">
-					<span class="readout__label">Runtime dependencies</span>
-					<span class="readout__value">5</span>
-					<span class="mt-2 feature__text">JavaFX, TarsosDSP, SLF4J, and the MCP SDK on Jetty. That is the whole list.</span>
-				</div>
-				<div class="readout">
-					<span class="readout__label">Network calls</span>
-					<span class="readout__value">0</span>
-					<span class="mt-2 feature__text">No account, no licence check, no telemetry, no update ping. The MCP server only listens.</span>
-				</div>
-				<div class="readout">
-					<span class="readout__label">Config files</span>
-					<span class="readout__value">0</span>
-					<span class="mt-2 feature__text">Settings live in the platform preference store, not a dotfile you have to find.</span>
-				</div>
-				<div class="readout">
-					<span class="readout__label">CI on every push</span>
-					<span class="readout__value">✓</span>
-					<span class="mt-2 feature__text">Tests, format check and a packaged <code>.dmg</code> attached to the run.</span>
-				</div>
-			</div>
-		</div>
-
-		<div class="mt-7 callout callout--lime">
-			<p class="callout__title">Your measurements stay on your laptop</p>
-			<p>
-				The app captures audio from a local input, draws it, and forgets it. Nothing is uploaded,
-				nothing is stored beyond the settings you chose, and the microphone permission macOS asks
-				for is exactly what it says: the measurement mic and console feeds the analyser needs to
-				read. You do not have to take that on trust — it is
-				<a href="https://github.com/d135-1r43/fohanalyzer/tree/master/src/main/java/com/fohanalyzer/audio">a few hundred lines you can read</a>.
-			</p>
-		</div>
-	</div>
-</section>
-
-<!-- ===================== internals ===================== -->
-<section class="section section--ruled" id="internals">
-	<div class="container">
-		<p class="sec-title sec-title--amber">How it works</p>
-		<h2>A small codebase, on purpose</h2>
-		<p class="mt-4 lead measure">
-			Six packages, plainly named. If you have written any Java, you can find your way around
-			this in an afternoon — which is rather the point of asking you to contribute.
-		</p>
-
-		<div class="mt-7 split">
-			<div>
-				<p class="sec-title">Packages</p>
-				<div class="table-wrap">
-					<table class="deflist">
-						<thead>
-							<tr><th scope="col">Package</th><th scope="col">Responsibility</th></tr>
-						</thead>
-						<tbody>
-							<tr><th scope="row">engine</th><td>Frequency math, note names, formatting, signal simulation</td></tr>
-							<tr><th scope="row">dsp</th><td>Per-band averaging, smoothing, peak hold, stats, Leq, the SPL limit, spectrogram history</td></tr>
-							<tr><th scope="row">audio</th><td>Java Sound capture, FFT and pitch detection, device enumeration</td></tr>
-							<tr><th scope="row">ui</th><td>JavaFX canvas rendering and render loop, spectrograph, app shell, action strip, control rail, preferences</td></tr>
-							<tr><th scope="row">mcp</th><td>Analyzer history, MCP tools, and the embedded HTTP server that serves them</td></tr>
-							<tr><th scope="row">ui.controls</th><td>Toggle, Segmented, Trim, Meter, LimitBar, LeqTrend, SourceCard, ChannelSelect, Logo</td></tr>
-						</tbody>
-					</table>
-				</div>
-			</div>
-
-			<div>
-				<p class="sec-title">Dependencies</p>
-				<div class="table-wrap">
-					<table class="deflist">
-						<thead>
-							<tr><th scope="col">Dependency</th><th scope="col">For</th><th scope="col">Licence</th></tr>
-						</thead>
-						<tbody>
-							<tr><th scope="row"><a href="https://openjfx.io">JavaFX</a></th><td>UI toolkit and canvas</td><td>GPLv2 + CE</td></tr>
-							<tr><th scope="row"><a href="https://github.com/JorenSix/TarsosDSP">TarsosDSP</a></th><td>FFT, windows, YIN pitch detection</td><td>GPL-3.0</td></tr>
-							<tr><th scope="row"><a href="https://www.slf4j.org">SLF4J</a></th><td>Logging</td><td>MIT</td></tr>
-							<tr><th scope="row"><a href="https://github.com/modelcontextprotocol/java-sdk">MCP Java SDK</a></th><td>MCP protocol and Streamable HTTP transport</td><td>MIT</td></tr>
-							<tr><th scope="row"><a href="https://jetty.org">Jetty</a></th><td>Hosts the MCP server on localhost</td><td>EPL-2.0 / Apache-2.0</td></tr>
-							<tr><th scope="row">JUnit 5</th><td>Tests only</td><td>EPL-2.0</td></tr>
-						</tbody>
-					</table>
-				</div>
-
-				<p class="mt-5 feature__text">
-					Live input is captured on a daemon thread into a 16384-sample ring buffer. Each frame
-					the newest window is Blackman-windowed, transformed, and converted to dBFS per bin.
-					The full write-up — including why the app is deliberately non-modular, and why the
-					broadband RMS stays hand-rolled — is in the
-					<a href="https://github.com/d135-1r43/fohanalyzer#how-it-works">README</a>.
-				</p>
-			</div>
-		</div>
-
-		<div class="mt-8 split split--wide-first">
-			<div>
-				<p class="sec-title">A worked example: see, set, do</p>
-				<p class="dim">
-					Every readout and control has one home, chosen by what you do with it. The rail on the
-					right only <em>shows</em>: each level once, the SPL meter, the logged rings, and what
-					the plot is computed with. Everything that is a setting — inputs, solo trim,
-					calibration, display and analysis options — lives in <em>Preferences</em>, one page
-					per area. And what you press during a show, from the view to <em>Detect ring</em>,
-					sits in a strip right above the plot it acts on.
-				</p>
-				<p class="mt-4 dim">
-					Nothing in Preferences is a commit step. The controls bind straight to the shared state
-					that gets persisted anyway, so there is nothing to apply and nothing to cancel — the
-					button in the corner only closes the window, and closing it changes nothing. The rail
-					still names what each setting is, as text — <code>trim −3.5 dB</code>,
-					<code>LZeq · 5 min</code> — because "what is this trace, and what is it computed with"
-					is a question you ask at a glance while working, even though the answer is only
-					<em>set</em> once.
-				</p>
-				<p class="mt-4 feature__text">
-					That is the level at which the whole codebase is documented, which is what makes it
-					approachable to change.
-				</p>
-			</div>
-
-			<figure>
-				<div class="shot">
-					<img class="shot__img" src="assets/img/preferences.png" width="560" height="707"
-						alt="The Preferences window on its SPL meter page, with a sidebar of pages: the calibration of the input in use, a table of saved calibrations per interface and channel, the Leq window, the venue limit, and where the session logs go."
-						loading="lazy" decoding="async">
-				</div>
-				<figcaption class="shot__caption">Preferences — every setting, one page per area</figcaption>
-			</figure>
-		</div>
-	</div>
-</section>
-
-<!-- ===================== maintainer ===================== -->
-<section class="section section--ruled" id="maintainer">
-	<div class="container">
-		<div class="split split--wide-first">
-			<div>
-				<p class="sec-title sec-title--cyan">Who makes this</p>
-				<h2>One maintainer, and whoever shows up</h2>
-				<p class="mt-4 lead">
-					FOHanalyzer is developed and maintained by
-					<a href="https://herhoffer.net">Markus Herhoffer</a>. It is a non-commercial,
-					spare-time project.
-				</p>
-			</div>
-
-			<div class="card acc-cyan">
-				<div class="card__head">
-					<span class="card__dot"></span>
-					<div>
-						<p class="person__name">Markus Herhoffer</p>
-						<p class="person__role">Developer &amp; maintainer</p>
-					</div>
-				</div>
-				<ul class="person__links">
-					<li>
-						<a href="https://herhoffer.net" rel="me">
-							<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18a15 15 0 0 1 0-18"/></svg>
-							herhoffer.net
-						</a>
-					</li>
-					<li>
-						<a href="https://github.com/d135-1r43" rel="me">
-							<svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor" stroke="none"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.11.79-.25.79-.56v-2c-3.2.7-3.88-1.54-3.88-1.54-.53-1.34-1.29-1.7-1.29-1.7-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.71 1.26 3.37.96.1-.75.4-1.26.73-1.55-2.56-.29-5.25-1.28-5.25-5.7 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11 11 0 0 1 5.79 0c2.21-1.49 3.18-1.18 3.18-1.18.63 1.59.23 2.76.11 3.05.74.81 1.18 1.84 1.18 3.1 0 4.43-2.69 5.4-5.26 5.69.41.36.78 1.06.78 2.14v3.17c0 .31.21.68.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg>
-							@d135-1r43
-						</a>
-					</li>
-					<li>
-						<a href="https://mastodon.social/@d135_1r43" rel="me">
-							<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8.5c0-3-2-4.5-6-4.5S6 5.5 6 8.5v4c0 3 2 4 4 4h4"/><path d="M9 12V9.5a1.8 1.8 0 0 1 3-1.2 1.8 1.8 0 0 1 3 1.2V12"/><path d="M6 16c1 2.5 3.5 3.2 7 3"/></svg>
-							@d135_1r43
-						</a>
-					</li>
-				</ul>
-				<p class="mt-4 feature__text">
-					For anything about the software, the
-					<a href="https://github.com/d135-1r43/fohanalyzer/issues">issue tracker</a> beats
-					email — other people get to read the answer.
-				</p>
-			</div>
-		</div>
-	</div>
-</section>
-
 <!-- ===================== contribute ===================== -->
 <section class="section section--ruled" id="contribute">
 	<div class="container">
-		<div class="center">
-			<p class="sec-title sec-title--lime">Contribute</p>
-			<h2>This is where you come in</h2>
-			<p class="mt-4 lead measure center">
-				FOHanalyzer gets better the more rigs it meets. You do not need to be a DSP engineer to
-				move it forward — some of the most useful contributions are not code at all.
-			</p>
-		</div>
-
-		<div class="mt-7 grid grid--wide">
-
-			<foh-reveal>
-			<article class="acc-cyan card card--link">
-				<div class="card__head">
-					<span class="card__dot"></span>
-					<h3 class="card__title">
-						<a class="card__link" href="contribute.html#report">Run it on your rig and tell us what broke</a>
-					</h3>
-				</div>
-				<div class="card__body">
-					<p>
-						Device enumeration is the messiest part of any audio app. An 18-in Scarlett, a Wing,
-						a USB stick mic, a Dante virtual soundcard — each one is a data point nobody has
-						unless you send it.
-					</p>
-				</div>
-				<p class="card__more">Open an issue <span>→</span></p>
-			</article>
-			</foh-reveal>
-
-			<foh-reveal delay="60">
-			<article class="acc-amber card card--link">
-				<div class="card__head">
-					<span class="card__dot"></span>
-					<h3 class="card__title">
-						<a class="card__link" href="contribute.html#platforms">Package it for Windows and Linux</a>
-					</h3>
-				</div>
-				<div class="card__body">
-					<p>
-						The code is plain JavaFX and Java Sound; only the packaging script is macOS-specific.
-						A well-scoped, high-impact job with a clear finish line — and one of the most-asked-for
-						things in the project.
-					</p>
-				</div>
-				<p class="card__more">See what is involved <span>→</span></p>
-			</article>
-			</foh-reveal>
-
-			<foh-reveal delay="120">
-			<article class="acc-lime card card--link">
-				<div class="card__head">
-					<span class="card__dot"></span>
-					<h3 class="card__title">
-						<a class="card__link" href="contribute.html#dsp">Sharpen the measurement</a>
-					</h3>
-				</div>
-				<div class="card__body">
-					<p>
-						A/C weighting, coherence, phase, impulse response, a proper dual-FFT transfer
-						function. The <code>dsp</code> and <code>engine</code> packages are pure, fully
-						tested functions — the friendliest place in the codebase to land a change.
-					</p>
-				</div>
-				<p class="card__more">Pick something up <span>→</span></p>
-			</article>
-			</foh-reveal>
-
-			<foh-reveal>
-			<article class="acc-low-mid card card--link">
-				<div class="card__head">
-					<span class="card__dot"></span>
-					<h3 class="card__title">
-						<a class="card__link" href="contribute.html#design">Argue with the interface</a>
-					</h3>
-				</div>
-				<div class="card__body">
-					<p>
-						The rail shows, Preferences sets, and the strip above the plot acts. If something
-						you need mid-show ended up in the wrong place for how <em>you</em> work, that is a
-						real bug, and saying so is a real contribution.
-					</p>
-				</div>
-				<p class="card__more">Tell us <span>→</span></p>
-			</article>
-			</foh-reveal>
-
-			<foh-reveal delay="60">
-			<article class="acc-mid card card--link">
-				<div class="card__head">
-					<span class="card__dot"></span>
-					<h3 class="card__title">
-						<a class="card__link" href="contribute.html#docs">Write the docs you wished you had</a>
-					</h3>
-				</div>
-				<div class="card__body">
-					<p>
-						A short guide to ringing out a wedge with this tool would help more engineers than
-						most features would. So would a translation, or a screenshot of it working on your
-						desk.
-					</p>
-				</div>
-				<p class="card__more">Start here <span>→</span></p>
-			</article>
-			</foh-reveal>
-
-			<foh-reveal delay="120">
-			<article class="acc-mut card card--link">
-				<div class="card__head">
-					<span class="card__dot"></span>
-					<h3 class="card__title">
-						<a class="card__link" href="https://github.com/d135-1r43/fohanalyzer/issues">Be the first in the tracker</a>
-					</h3>
-				</div>
-				<div class="card__body">
-					<p>
-						This is a young project and the issue list is short. Nothing is claimed, nothing is
-						queued behind six months of backlog, and whatever you file gets read — which is a
-						better position to arrive in than most.
-					</p>
-				</div>
-				<p class="card__more">Open the tracker <span>→</span></p>
-			</article>
-			</foh-reveal>
-
-		</div>
-
-		<div class="mt-8 cta">
-			<h2 class="cta__title">Two commands from clone to running</h2>
+		<div class="cta">
+			<h2 class="cta__title">Free, open source, and yours</h2>
 			<p class="cta__text">
-				JDK 25 and Maven 3.9 are the only prerequisites, and the simulator means you can see the
-				thing work before you own a measurement mic.
+				No account, no telemetry, no paid tier. Your measurements never leave the laptop.
+				Run it on your rig and tell us what broke, or help make it better.
 			</p>
-
-			<foh-copy>
-<pre><code><span class="prompt">$ </span>git clone https://github.com/d135-1r43/fohanalyzer
-<span class="prompt">$ </span>cd fohanalyzer &amp;&amp; mvn javafx:run</code></pre>
-			</foh-copy>
-
 			<div class="mt-6 btn-row btn-row--center">
-				<a class="btn btn--lg btn--lime" href="contribute.html">Read the contributor guide</a>
+				<a class="btn btn--lg btn--lime" href="contribute.html">How to contribute</a>
 				<a class="btn btn--lg" href="https://github.com/d135-1r43/fohanalyzer/issues/new">Open an issue</a>
 			</div>
 		</div>
@@ -740,8 +396,7 @@
 					</span>
 				</a>
 				<p class="site-footer__blurb">
-					A dual-channel real-time analyser for front-of-house engineers. Built in the open,
-					because the people who need it are the people who can improve it.
+					A dual-channel real-time analyser for front-of-house engineers.
 				</p>
 			</div>
 
@@ -749,7 +404,6 @@
 				<p class="sec-title">Product</p>
 				<ul>
 					<li><a href="#features">Features</a></li>
-					<li><a href="#internals">How it works</a></li>
 					<li><a href="https://github.com/d135-1r43/fohanalyzer/releases/latest">Download</a></li>
 					<li><a href="https://github.com/d135-1r43/fohanalyzer#install">Install notes</a></li>
 				</ul>
@@ -770,8 +424,6 @@
 				<ul>
 					<li><a href="impressum.html">Impressum</a></li>
 					<li><a href="https://github.com/d135-1r43/fohanalyzer/blob/master/LICENSE">GPL-3.0-or-later</a></li>
-					<li><a href="https://www.gnu.org/philosophy/free-sw.html">What free software means</a></li>
-					<li><a href="https://openfontlicense.org">SIL OFL 1.1 (fonts)</a></li>
 				</ul>
 			</nav>
 		</div>
@@ -784,10 +436,8 @@
 		</div>
 
 		<p class="site-footer__legal">
-			FOHanalyzer is free software under <a href="https://github.com/d135-1r43/fohanalyzer/blob/master/LICENSE">GPL-3.0-or-later</a>, and comes with absolutely no warranty.<br>
-			Developed and maintained by <a href="https://herhoffer.net">Markus Herhoffer</a> · <a href="impressum.html">Impressum</a><br>
-			Set in <a href="https://github.com/carrois/Barlow">Barlow</a> and <a href="https://github.com/IBM/plex">IBM Plex Mono</a>, both under the SIL Open Font License 1.1, self-hosted.<br>
-			This site sets no cookies and profiles nobody; visits are counted by a self-hosted, cookieless Plausible instance.
+			Free software under <a href="https://github.com/d135-1r43/fohanalyzer/blob/master/LICENSE">GPL-3.0-or-later</a> · by <a href="https://herhoffer.net">Markus Herhoffer</a> · <a href="impressum.html">Impressum</a><br>
+			No cookies; visits are counted by a self-hosted, cookieless Plausible.
 		</p>
 	</div>
 </footer>
